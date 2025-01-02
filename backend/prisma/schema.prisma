@@ -24,17 +24,18 @@ model WorkflowTemplate {
 }
 
 model Step {
-  id                 String           @id @default(uuid())
-  workflowTemplate   WorkflowTemplate @relation(fields: [workflowTemplateId], references: [id])
-  workflowTemplateId String
-  name               String
-  type               String // Plugin type identifier
-  inputs             Json
-  fromConnections    Connection[]     @relation("fromStepRelation")
-  toConnections      Connection[]     @relation("toStepRelation")
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  StepRun            StepRun[]
+  id                    String           @id @default(uuid())
+  workflowTemplate      WorkflowTemplate @relation(fields: [workflowTemplateId], references: [id])
+  workflowTemplateId    String
+  name                  String
+  type                  String // Plugin type identifier
+  inputs                Json
+  visualizationMetadata Json
+  fromConnections       Connection[]     @relation("fromStepRelation")
+  toConnections         Connection[]     @relation("toStepRelation")
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  StepRun               StepRun[]
 }
 
 model Connection {
