@@ -1,0 +1,14 @@
+{
+  "name": "jawe",
+  "version": "1.0.0",
+  "workspaces": [
+    "frontend"
+  ],
+  "description": "**JAWE** is a lightweight, highly extensible, and easy-to-use workflow engine built in TypeScript.",
+  "main": "index.js",
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend"
+  },
+  "author": "",
+  "license": "ISC"
+}
