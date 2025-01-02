@@ -10,5 +10,8 @@
     "dev:frontend": "npm run dev --workspace=frontend"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "react-router": "^7.1.1"
+  }
 }
