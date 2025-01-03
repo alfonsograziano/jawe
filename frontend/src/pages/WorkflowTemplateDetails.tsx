@@ -17,9 +17,7 @@ import { Button, message } from "antd";
 
 const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
   const targetNodes = [];
-  if (data?.entryPoint) {
-    targetNodes.push(data.entryPoint);
-  }
+
   if (data?.steps) {
     targetNodes.push(...data.steps);
   }
@@ -65,11 +63,13 @@ const addNewStepToTemplate = (
     },
   };
 
-  if (!newTemplate.entryPoint) {
-    newTemplate.entryPoint = newStep;
-  } else if (newTemplate.steps) {
-    newTemplate.steps.push(newStep);
+  if (!newTemplate.steps) newTemplate.steps = [];
+  newTemplate.steps.push(newStep);
+
+  if (!newTemplate.entryPointId) {
+    newTemplate.entryPointId = newStep.id;
   }
+
   return newTemplate;
 };
 
@@ -90,23 +90,12 @@ const updateStepInTemplate = (
     newTemplate.steps.length > 0 &&
     newTemplate.steps.find((step) => step.id === plugin.id);
 
-  const isStepEntryPoint = newTemplate.entryPoint?.id === plugin.id;
-
   if (step) {
     step.visualizationMetadata = {
       ...(step.visualizationMetadata as {}),
       position: plugin.position,
     };
 
-    return newTemplate;
-  }
-
-  if (isStepEntryPoint) {
-    if (!newTemplate.entryPoint) return newTemplate;
-    newTemplate.entryPoint.visualizationMetadata = {
-      ...(newTemplate.entryPoint.visualizationMetadata as {}),
-      position: plugin.position,
-    };
     return newTemplate;
   }
 

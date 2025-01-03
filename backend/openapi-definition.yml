@@ -95,21 +95,8 @@ paths:
                       - type: string
                         enum:
                           - PUBLISHED
-                  entryPoint:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      name:
-                        type: string
-                      type:
-                        type: string
-                      inputs: {}
-                      visualizationMetadata: {}
-                    required:
-                      - id
-                      - name
-                      - type
+                  entryPointId:
+                    type: string
                   steps:
                     type: array
                     items:

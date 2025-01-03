@@ -58,7 +58,7 @@ const GetWorkflowResponse = Type.Object({
   id: Type.String(),
   name: Type.String(),
   status: TemplateStatus,
-  entryPoint: Type.Optional(Step),
+  entryPointId: Type.Optional(Type.String()),
   steps: Type.Optional(Type.Array(Step)),
   connections: Type.Optional(Type.Array(StepConnections)),
   updatedAt: Type.String({ format: "date-time" }),
@@ -137,7 +137,6 @@ export default async function workflowTemplate(app: FastifyInstance) {
         include: {
           steps: true,
           connections: true,
-          entryPoint: true,
         },
       });
 
@@ -149,7 +148,7 @@ export default async function workflowTemplate(app: FastifyInstance) {
         id: workflow.id,
         name: workflow.name,
         status: workflow.status,
-        entryPoint: workflow.entryPoint || undefined,
+        entryPointId: workflow.entryPointId || undefined,
         steps: workflow.steps,
         connections: workflow.connections,
         updatedAt: workflow.updatedAt.toISOString(),
@@ -214,6 +213,42 @@ export default async function workflowTemplate(app: FastifyInstance) {
           where: { id: { in: connectionIdsToDelete } },
         });
 
+        // Upsert each step individually and link them to the workflow
+        for (const step of steps || []) {
+          await app.prisma.step.upsert({
+            where: { id: step.id },
+            create: {
+              id: step.id,
+              name: step.name,
+              type: step.type,
+              workflowTemplateId: id, // Link step to workflow
+              inputs: step.inputs || {}, // Provide a default value if inputs are undefined
+              visualizationMetadata: step.visualizationMetadata || {}, // Default value
+            },
+            update: {
+              name: step.name,
+              type: step.type,
+              workflowTemplateId: id, // Ensure linkage is maintained
+              inputs: step.inputs,
+              visualizationMetadata: step.visualizationMetadata,
+            },
+          });
+        }
+
+        // Upsert each connection individually and link them to the workflow
+        for (const connection of connections || []) {
+          await app.prisma.connection.upsert({
+            where: { id: connection.id },
+            create: {
+              ...connection,
+              workflowTemplateId: id, // Link connection to workflow
+            },
+            update: {
+              ...connection,
+              workflowTemplateId: id, // Ensure linkage is maintained
+            },
+          });
+        }
         // Update the workflow template
         const updatedWorkflow = await app.prisma.workflowTemplate.update({
           where: { id },
@@ -221,37 +256,6 @@ export default async function workflowTemplate(app: FastifyInstance) {
             name,
             entryPointId,
             status,
-            steps: steps
-              ? {
-                  upsert: steps.map((step) => ({
-                    where: { id: step.id },
-                    create: {
-                      id: step.id,
-                      name: step.name,
-                      type: step.type,
-                      inputs: step.inputs || {}, // Provide a default value if inputs are undefined
-                      visualizationMetadata: step.visualizationMetadata || {}, // Default value
-                    },
-                    update: {
-                      name: step.name,
-                      type: step.type,
-                      inputs: step.inputs,
-                      visualizationMetadata: step.visualizationMetadata,
-                    },
-                  })),
-                }
-              : undefined,
-            connections: connections
-              ? {
-                  upsert: connections.map((connection) => {
-                    return {
-                      where: { id: connection.id },
-                      create: connection, // Use client-provided ID for creation
-                      update: connection, // Update if the connection exists
-                    };
-                  }),
-                }
-              : undefined,
           },
         });
 

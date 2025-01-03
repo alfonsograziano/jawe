@@ -133,13 +133,7 @@ export interface paths {
                             id: string;
                             name: string;
                             status: "DRAFT" | "PUBLISHED";
-                            entryPoint?: {
-                                id: string;
-                                name: string;
-                                type: string;
-                                inputs?: unknown;
-                                visualizationMetadata?: unknown;
-                            };
+                            entryPointId?: string;
                             steps?: {
                                 id: string;
                                 name: string;
