@@ -11,4 +11,221 @@ paths:
       responses:
         "200":
           description: Default Response
+  /api/v1/workflow-template/:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+        required: true
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                required:
+                  - id
+    get:
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    updatedAt:
+                      format: date-time
+                      type: string
+                    status:
+                      anyOf:
+                        - type: string
+                          enum:
+                            - DRAFT
+                        - type: string
+                          enum:
+                            - PUBLISHED
+                  required:
+                    - id
+                    - name
+                    - updatedAt
+                    - status
+  /api/v1/workflow-template/{id}:
+    get:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - DRAFT
+                      - type: string
+                        enum:
+                          - PUBLISHED
+                  entryPointId:
+                    type: string
+                  steps:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                        inputs: {}
+                        visualizationMetadata: {}
+                      required:
+                        - id
+                        - name
+                        - type
+                  connections:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        fromStepId:
+                          type: string
+                        toStepId:
+                          type: string
+                      required:
+                        - id
+                        - fromStepId
+                        - toStepId
+                  updatedAt:
+                    format: date-time
+                    type: string
+                required:
+                  - id
+                  - name
+                  - status
+                  - updatedAt
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      type:
+                        type: string
+                      inputs: {}
+                      visualizationMetadata: {}
+                    required:
+                      - id
+                      - name
+                      - type
+                connections:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      fromStepId:
+                        type: string
+                      toStepId:
+                        type: string
+                    required:
+                      - id
+                      - fromStepId
+                      - toStepId
+                entryPointId:
+                  type: string
+                status:
+                  anyOf:
+                    - type: string
+                      enum:
+                        - DRAFT
+                    - type: string
+                      enum:
+                        - PUBLISHED
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                required:
+                  - id
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
 tags: []

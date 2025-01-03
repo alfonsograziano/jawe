@@ -13,8 +13,10 @@
     "@ant-design/icons": "^5.5.2",
     "@xyflow/react": "^12.3.6",
     "antd": "^5.22.7",
+    "openapi-fetch": "^0.13.3",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

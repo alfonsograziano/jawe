@@ -5,10 +5,29 @@ describe("HelloWorld Plugin", () => {
   it("should return the correct plugin info", () => {
     const plugin = new HelloWorld();
     const pluginInfo = plugin.getPluginInfo();
-
-    expect(pluginInfo).toEqual({
+    expect(JSON.parse(JSON.stringify(pluginInfo))).toEqual({
       name: "HelloWorld",
       description: "A plugin that takes a name as input and returns greetings",
+      inputs: {
+        type: "object",
+        properties: {
+          name: {
+            minLength: 1,
+            type: "string",
+          },
+        },
+        required: ["name"],
+      },
+      outputs: {
+        type: "object",
+        properties: {
+          greetings: {
+            minLength: 1,
+            type: "string",
+          },
+        },
+        required: ["greetings"],
+      },
     });
   });
 

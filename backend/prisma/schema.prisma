@@ -14,28 +14,32 @@ datasource db {
 }
 
 model WorkflowTemplate {
-  id          String        @id @default(uuid())
-  name        String        @unique
-  steps       Step[] // Array of steps representing the workflow structure
-  connections Connection[] // Array of connections representing the DAG edges
-  workflows   WorkflowRun[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id           String                 @id @default(uuid())
+  name         String                 @unique
+  steps        Step[] // Array of steps representing the workflow structure
+  connections  Connection[] // Array of connections representing the DAG edges
+  workflows    WorkflowRun[]
+  entryPoint   Step?                  @relation("entryPointStep", fields: [entryPointId], references: [id])
+  entryPointId String?                @unique
+  status       WorkflowTemplateStatus @default(DRAFT) // Workflow status
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
 }
 
 model Step {
-  id                    String           @id @default(uuid())
-  workflowTemplate      WorkflowTemplate @relation(fields: [workflowTemplateId], references: [id])
+  id                    String            @id @default(uuid())
+  workflowTemplate      WorkflowTemplate  @relation(fields: [workflowTemplateId], references: [id])
   workflowTemplateId    String
   name                  String
   type                  String // Plugin type identifier
   inputs                Json
   visualizationMetadata Json
-  fromConnections       Connection[]     @relation("fromStepRelation")
-  toConnections         Connection[]     @relation("toStepRelation")
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  fromConnections       Connection[]      @relation("fromStepRelation")
+  toConnections         Connection[]      @relation("toStepRelation")
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
   StepRun               StepRun[]
+  workflowTemplateEntry WorkflowTemplate? @relation("entryPointStep")
 }
 
 model Connection {
@@ -86,4 +90,9 @@ enum StepRunStatus {
   RUNNING
   COMPLETED
   FAILED
+}
+
+enum WorkflowTemplateStatus {
+  DRAFT
+  PUBLISHED
 }
