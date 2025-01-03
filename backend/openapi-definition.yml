@@ -95,8 +95,21 @@ paths:
                       - type: string
                         enum:
                           - PUBLISHED
-                  entryPointId:
-                    type: string
+                  entryPoint:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      type:
+                        type: string
+                      inputs: {}
+                      visualizationMetadata: {}
+                    required:
+                      - id
+                      - name
+                      - type
                   steps:
                     type: array
                     items:
@@ -228,4 +241,26 @@ paths:
                     type: string
                 required:
                   - error
+  /api/v1/plugin/:
+    get:
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    id:
+                      type: string
+                    description:
+                      type: string
+                  required:
+                    - name
+                    - id
+                    - description
 tags: []

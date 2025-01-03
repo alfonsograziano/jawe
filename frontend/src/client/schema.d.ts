@@ -133,7 +133,13 @@ export interface paths {
                             id: string;
                             name: string;
                             status: "DRAFT" | "PUBLISHED";
-                            entryPointId?: string;
+                            entryPoint?: {
+                                id: string;
+                                name: string;
+                                type: string;
+                                inputs?: unknown;
+                                visualizationMetadata?: unknown;
+                            };
                             steps?: {
                                 id: string;
                                 name: string;
@@ -219,6 +225,45 @@ export interface paths {
                 };
             };
         };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plugin/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            name: string;
+                            id: string;
+                            description: string;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;

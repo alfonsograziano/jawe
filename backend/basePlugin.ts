@@ -5,7 +5,13 @@ export interface BasePlugin {
    * Retrieves plugin metadata, such as name and description.
    * @returns An object containing plugin metadata.
    */
-  getPluginInfo(): { name: string; description: string };
+  getPluginInfo(): {
+    id: string;
+    name: string;
+    description: string;
+    inputs: Record<string, unknown>;
+    outputs: Record<string, unknown>;
+  };
 
   /**
    * Executes the plugin logic.

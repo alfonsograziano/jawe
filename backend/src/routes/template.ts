@@ -58,7 +58,7 @@ const GetWorkflowResponse = Type.Object({
   id: Type.String(),
   name: Type.String(),
   status: TemplateStatus,
-  entryPointId: Type.Optional(Type.String()),
+  entryPoint: Type.Optional(Step),
   steps: Type.Optional(Type.Array(Step)),
   connections: Type.Optional(Type.Array(StepConnections)),
   updatedAt: Type.String({ format: "date-time" }),
@@ -137,6 +137,7 @@ export default async function workflowTemplate(app: FastifyInstance) {
         include: {
           steps: true,
           connections: true,
+          entryPoint: true,
         },
       });
 
@@ -148,7 +149,7 @@ export default async function workflowTemplate(app: FastifyInstance) {
         id: workflow.id,
         name: workflow.name,
         status: workflow.status,
-        entryPointId: workflow.entryPointId || undefined,
+        entryPoint: workflow.entryPoint || undefined,
         steps: workflow.steps,
         connections: workflow.connections,
         updatedAt: workflow.updatedAt.toISOString(),

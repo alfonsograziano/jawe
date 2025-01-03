@@ -17,7 +17,8 @@ export type HelloWorldOutput = Static<typeof OutputSchema>;
 export default class HelloWorld implements BasePlugin {
   getPluginInfo() {
     return {
-      name: "HelloWorld",
+      id: "hello-world",
+      name: "Hello World",
       description: "A plugin that takes a name as input and returns greetings",
       inputs: InputSchema,
       outputs: OutputSchema,
