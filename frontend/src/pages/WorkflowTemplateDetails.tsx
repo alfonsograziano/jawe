@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ReactFlow,
   MiniMap,
@@ -6,7 +6,6 @@ import {
   Background,
   useNodesState,
   useEdgesState,
-  addEdge,
   BackgroundVariant,
   Connection,
 } from "@xyflow/react";
@@ -14,6 +13,7 @@ import { useParams } from "react-router";
 import "@xyflow/react/dist/style.css";
 import { Client, WorkflowTemplate } from "../client";
 import AddNewPlugin from "../components/AddNewPlugin";
+import { Button, message } from "antd";
 
 const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
   const targetNodes = [];
@@ -113,6 +113,24 @@ const updateStepInTemplate = (
   return newTemplate;
 };
 
+const addConnection = (template: WorkflowTemplate, connection: Connection) => {
+  const newTemplate = structuredClone(template);
+
+  const newConnection = {
+    id: crypto.randomUUID(),
+    fromStepId: connection.source,
+    toStepId: connection.target,
+  };
+
+  if (newTemplate.connections && newTemplate.connections.length > 0) {
+    newTemplate.connections.push(newConnection);
+  } else {
+    newTemplate.connections = [newConnection];
+  }
+
+  return newTemplate;
+};
+
 export default function WorkflowTemplateDetails() {
   const { id } = useParams();
   if (!id) return <p>You need to add an ID...</p>;
@@ -136,16 +154,18 @@ export default function WorkflowTemplateDetails() {
     if (!template) return;
     const { nodes: formattedNodes, edges: formattedEdges } =
       getNodesAndEdgesFromTemplate(template);
-    setNodes(formattedNodes);
-    setEdges(formattedEdges);
+    setNodes(formattedNodes as any);
+    setEdges(formattedEdges as any);
   }, [template]);
 
-  const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
-
   if (!template) return <p>Loading template...</p>;
+
+  const saveTemplate = async () => {
+    const client = new Client();
+    const { data, error } = await client.updateTemplate(template?.id, template);
+    if (data) message.success("Workflow template created 🎉");
+    if (error) message.success("Error in updating the template...");
+  };
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
@@ -155,6 +175,9 @@ export default function WorkflowTemplateDetails() {
           setTemplate(newTemplate);
         }}
       />
+      <Button onClick={saveTemplate} type="primary">
+        Save
+      </Button>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -174,8 +197,12 @@ export default function WorkflowTemplateDetails() {
           }
           onNodesChange(changes);
         }}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        onEdgesChange={(changes) => {
+          onEdgesChange(changes);
+        }}
+        onConnect={(params: Connection) => {
+          setTemplate(addConnection(template, params));
+        }}
       >
         <Controls />
         <MiniMap />

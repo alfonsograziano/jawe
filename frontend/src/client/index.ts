@@ -21,6 +21,15 @@ export class Client {
   ) {
     return client.POST("/api/v1/workflow-template/", { body });
   }
+  updateTemplate(
+    templateId: string,
+    body: paths["/api/v1/workflow-template/{id}"]["put"]["requestBody"]["content"]["application/json"]
+  ) {
+    return client.PUT("/api/v1/workflow-template/{id}", {
+      params: { path: { id: templateId } },
+      body,
+    });
+  }
 
   loadTemplates() {
     return client.GET("/api/v1/workflow-template/");
