@@ -10,26 +10,12 @@ import {
   BackgroundVariant,
   Connection,
 } from "@xyflow/react";
-
+import { useParams } from "react-router";
 import "@xyflow/react/dist/style.css";
-import { Client, PluginsInfoList, WorkflowTemplate } from "../client";
-import { Button } from "antd";
-import PluginSelectorModal from "../components/PluginSelectorModal";
+import { Client, WorkflowTemplate } from "../client";
+import AddNewPlugin from "../components/AddNewPlugin";
 
-const initialNodes = [
-  { id: "1", position: { x: 0, y: 0 }, data: { label: "1" } },
-  { id: "2", position: { x: 0, y: 100 }, data: { label: "2" } },
-];
-const initialEdges = [{ id: "e1-2", source: "1", target: "2" }];
-
-const loadAndFormatTemplate = async (id: string) => {
-  const client = new Client();
-  const { data, error } = await client.loadTemplateDetails(id);
-  if (!data) throw new Error("Cannot find data");
-  return formatTemplate(data);
-};
-
-const formatTemplate = (data: WorkflowTemplate) => {
+const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
   const targetNodes = [];
   if (data?.entryPoint) {
     targetNodes.push(data.entryPoint);
@@ -40,14 +26,21 @@ const formatTemplate = (data: WorkflowTemplate) => {
 
   const nodes = targetNodes.map((step) => ({
     id: step.id,
-    ...(step.visualizationMetadata as {}),
+    ...(step.visualizationMetadata as {
+      position: {
+        x: number;
+        y: number;
+      };
+      data: { label: string };
+    }),
   }));
 
-  const edges = data?.connections?.map((connection) => ({
-    id: connection.id,
-    source: connection.fromStepId,
-    target: connection.toStepId,
-  }));
+  const edges =
+    data?.connections?.map((connection) => ({
+      id: connection.id,
+      source: connection.fromStepId,
+      target: connection.toStepId,
+    })) || [];
 
   return {
     nodes,
@@ -55,77 +48,132 @@ const formatTemplate = (data: WorkflowTemplate) => {
   };
 };
 
-function AddNewPlugin({
-  onSelect,
-}: {
-  onSelect: (plugin: { id: string; name: string }) => void;
-}) {
-  const [availablePlugins, setAvailablePlugins] = useState<
-    PluginsInfoList | undefined
-  >();
-  const [isPluginSelectorModalVisible, setIsPluginSelectorModalVisible] =
-    useState(false);
+const addNewStepToTemplate = (
+  template: WorkflowTemplate,
+  plugin: { id: string; name: string }
+) => {
+  const newTemplate = structuredClone(template);
 
-  const handleOpenModal = () => setIsPluginSelectorModalVisible(true);
-  const handleCloseModal = () => setIsPluginSelectorModalVisible(false);
+  const newStep = {
+    id: crypto.randomUUID(),
+    name: plugin.name,
+    type: plugin.id,
+    inputs: {},
+    visualizationMetadata: {
+      position: { x: 0, y: 0 },
+      data: { label: plugin.name },
+    },
+  };
 
-  const loadPlugins = async () => {
+  if (!newTemplate.entryPoint) {
+    newTemplate.entryPoint = newStep;
+  } else if (newTemplate.steps) {
+    newTemplate.steps.push(newStep);
+  }
+  return newTemplate;
+};
+
+const updateStepInTemplate = (
+  template: WorkflowTemplate,
+  plugin: {
+    id: string;
+    position: {
+      x: number;
+      y: number;
+    };
+  }
+) => {
+  const newTemplate = structuredClone(template);
+
+  const step =
+    newTemplate.steps &&
+    newTemplate.steps.length > 0 &&
+    newTemplate.steps.find((step) => step.id === plugin.id);
+
+  const isStepEntryPoint = newTemplate.entryPoint?.id === plugin.id;
+
+  if (step) {
+    step.visualizationMetadata = {
+      ...(step.visualizationMetadata as {}),
+      position: plugin.position,
+    };
+
+    return newTemplate;
+  }
+
+  if (isStepEntryPoint) {
+    if (!newTemplate.entryPoint) return newTemplate;
+    newTemplate.entryPoint.visualizationMetadata = {
+      ...(newTemplate.entryPoint.visualizationMetadata as {}),
+      position: plugin.position,
+    };
+    return newTemplate;
+  }
+
+  return newTemplate;
+};
+
+export default function WorkflowTemplateDetails() {
+  const { id } = useParams();
+  if (!id) return <p>You need to add an ID...</p>;
+
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  const [template, setTemplate] = useState<WorkflowTemplate | undefined>();
+
+  const loadTemplate = async (id: string) => {
     const client = new Client();
-    const { data } = await client.loadPlugins();
-    setAvailablePlugins(data);
+    const { data, error } = await client.loadTemplateDetails(id);
+    setTemplate(data);
   };
 
   useEffect(() => {
-    loadPlugins();
-  }, []);
+    loadTemplate(id);
+  }, [id]);
 
-  return (
-    <div>
-      {availablePlugins && (
-        <>
-          <Button onClick={handleOpenModal} type="primary">
-            Add new step
-          </Button>
-          <PluginSelectorModal
-            isOpen={isPluginSelectorModalVisible}
-            plugins={availablePlugins}
-            onSave={(selected) => {
-              setIsPluginSelectorModalVisible(false);
-              onSelect(
-                availablePlugins.find((plugin) => plugin.id === selected) as {
-                  id: string;
-                  name: string;
-                }
-              );
-            }}
-            onCancel={handleCloseModal}
-          />
-        </>
-      )}
-    </div>
-  );
-}
-
-export default function WorkflowTemplateDetails() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  useEffect(() => {
+    if (!template) return;
+    const { nodes: formattedNodes, edges: formattedEdges } =
+      getNodesAndEdgesFromTemplate(template);
+    setNodes(formattedNodes);
+    setEdges(formattedEdges);
+  }, [template]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
+  if (!template) return <p>Loading template...</p>;
+
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <AddNewPlugin
         onSelect={(plugin) => {
-          console.log("Add new plugin...", plugin);
+          const newTemplate = addNewStepToTemplate(template, plugin);
+          setTemplate(newTemplate);
         }}
       />
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
+        onNodesChange={(changes) => {
+          const change = changes[0] as {
+            dragging: boolean;
+            id: string;
+            position: {
+              x: number;
+              y: number;
+            };
+            type: string;
+          };
+          if (!change.dragging && change.type === "position") {
+            const newTemplate = updateStepInTemplate(template, change);
+            setTemplate(newTemplate);
+          }
+          onNodesChange(changes);
+        }}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
       >
