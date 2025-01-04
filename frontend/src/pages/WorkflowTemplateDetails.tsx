@@ -8,12 +8,18 @@ import {
   useEdgesState,
   BackgroundVariant,
   Connection,
+  MarkerType,
+  Panel,
 } from "@xyflow/react";
 import { useParams } from "react-router";
 import "@xyflow/react/dist/style.css";
 import { Client, WorkflowTemplate } from "../client";
 import AddNewPlugin from "../components/AddNewPlugin";
-import { Button, message } from "antd";
+import { Button, message, Typography } from "antd";
+import BackButton from "../components/Back";
+import { useNavigate } from "react-router-dom";
+
+const { Title } = Typography;
 
 const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
   const targetNodes = [];
@@ -58,7 +64,7 @@ const addNewStepToTemplate = (
     type: plugin.id,
     inputs: {},
     visualizationMetadata: {
-      position: { x: 0, y: 0 },
+      position: { x: 500, y: 500 },
       data: { label: plugin.name },
     },
   };
@@ -122,6 +128,8 @@ const addConnection = (template: WorkflowTemplate, connection: Connection) => {
 
 export default function WorkflowTemplateDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   if (!id) return <p>You need to add an ID...</p>;
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -158,15 +166,6 @@ export default function WorkflowTemplateDetails() {
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <AddNewPlugin
-        onSelect={(plugin) => {
-          const newTemplate = addNewStepToTemplate(template, plugin);
-          setTemplate(newTemplate);
-        }}
-      />
-      <Button onClick={saveTemplate} type="primary">
-        Save
-      </Button>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -192,7 +191,45 @@ export default function WorkflowTemplateDetails() {
         onConnect={(params: Connection) => {
           setTemplate(addConnection(template, params));
         }}
+        onDelete={(params) => {
+          console.log(params);
+        }}
+        defaultEdgeOptions={{
+          type: "floating",
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: "#b1b1b7",
+          },
+        }}
       >
+        <Panel>
+          <div style={{ display: "flex", gap: 20 }}>
+            <BackButton />
+            <Title level={3} style={{ margin: 0 }}>
+              {template.name}
+            </Title>
+            <AddNewPlugin
+              onSelect={(plugin) => {
+                const newTemplate = addNewStepToTemplate(template, plugin);
+                setTemplate(newTemplate);
+              }}
+            />
+            <Button onClick={saveTemplate} type="primary">
+              Save
+            </Button>
+
+            <Button
+              color="danger"
+              variant="solid"
+              onClick={async () => {
+                await new Client().deleteTemplate(template.id);
+                navigate(-1);
+              }}
+            >
+              Delete template
+            </Button>
+          </div>
+        </Panel>
         <Controls />
         <MiniMap />
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />

@@ -16,8 +16,8 @@ datasource db {
 model WorkflowTemplate {
   id           String                 @id @default(uuid())
   name         String                 @unique
-  steps        Step[] // Array of steps representing the workflow structure
-  connections  Connection[] // Array of connections representing the DAG edges
+  steps        Step[]
+  connections  Connection[]
   workflows    WorkflowRun[]
   entryPoint   Step?                  @relation("entryPointStep", fields: [entryPointId], references: [id])
   entryPointId String?                @unique
@@ -28,7 +28,7 @@ model WorkflowTemplate {
 
 model Step {
   id                    String            @id @default(uuid())
-  workflowTemplate      WorkflowTemplate  @relation(fields: [workflowTemplateId], references: [id])
+  workflowTemplate      WorkflowTemplate  @relation(fields: [workflowTemplateId], references: [id], onDelete: Cascade)
   workflowTemplateId    String
   name                  String
   type                  String // Plugin type identifier
@@ -44,7 +44,7 @@ model Step {
 
 model Connection {
   id                 String           @id @default(uuid())
-  workflowTemplate   WorkflowTemplate @relation(fields: [workflowTemplateId], references: [id])
+  workflowTemplate   WorkflowTemplate @relation(fields: [workflowTemplateId], references: [id], onDelete: Cascade)
   workflowTemplateId String
   fromStep           Step             @relation("fromStepRelation", fields: [fromStepId], references: [id], onDelete: Cascade)
   fromStepId         String
@@ -56,7 +56,7 @@ model Connection {
 
 model WorkflowRun {
   id         String           @id @default(uuid())
-  template   WorkflowTemplate @relation(fields: [templateId], references: [id])
+  template   WorkflowTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   templateId String
   status     WorkflowStatus
   startTime  DateTime
@@ -68,9 +68,9 @@ model WorkflowRun {
 
 model StepRun {
   id        String        @id @default(uuid())
-  step      Step          @relation(fields: [stepId], references: [id])
+  step      Step          @relation(fields: [stepId], references: [id], onDelete: Cascade)
   stepId    String
-  run       WorkflowRun   @relation(fields: [runId], references: [id])
+  run       WorkflowRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
   runId     String
   status    StepRunStatus
   output    Json

@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Button, Typography, Layout, Row, Col } from "antd";
-import WorkflowTemplateCreationModal from "./components/WorkflowTemplateCreationModal";
-import { Client, WorkflowsList } from "./client";
-import WorkflowsTemplateList from "./components/WorkflowsTemplateList";
+import WorkflowTemplateCreationModal from "../components/WorkflowTemplateCreationModal";
+import { Client, WorkflowsList } from "../client";
+import WorkflowsTemplateList from "../components/WorkflowsTemplateList";
 
 const { Title } = Typography;
 const { Header, Content } = Layout;
 
-const App: React.FC = () => {
+const WorkflowList: React.FC = () => {
   const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] =
     useState(false);
 
@@ -60,4 +60,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export default WorkflowList;

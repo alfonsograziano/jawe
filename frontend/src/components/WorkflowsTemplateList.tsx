@@ -12,9 +12,9 @@ const WorkflowsTemplateList = ({ workflows }: { workflows: WorkflowsList }) => {
       key: "name",
     },
     {
-      title: "Updated At",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
     },
     {
       title: "Status",

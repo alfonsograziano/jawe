@@ -49,7 +49,7 @@ const ListWorkflowResponse = Type.Array(
   Type.Object({
     id: Type.String(),
     name: Type.String(),
-    updatedAt: Type.String({ format: "date-time" }),
+    createdAt: Type.String({ format: "date-time" }),
     status: TemplateStatus,
   })
 );
@@ -62,6 +62,19 @@ const GetWorkflowResponse = Type.Object({
   steps: Type.Optional(Type.Array(Step)),
   connections: Type.Optional(Type.Array(StepConnections)),
   updatedAt: Type.String({ format: "date-time" }),
+});
+
+const DeleteWorkflowParams = Type.Object({
+  id: Type.String(),
+});
+
+const DeleteWorkflowResponse = Type.Object({
+  success: Type.Boolean(),
+  message: Type.String(),
+});
+
+const DeleteWorkflowErrorResponse = Type.Object({
+  error: Type.String(),
 });
 
 export default async function workflowTemplate(app: FastifyInstance) {
@@ -104,14 +117,14 @@ export default async function workflowTemplate(app: FastifyInstance) {
         select: {
           id: true,
           name: true,
-          updatedAt: true,
+          createdAt: true,
           status: true,
         },
       });
 
       const formattedWorkflows = workflows.map((workflow) => ({
         ...workflow,
-        updatedAt: workflow.updatedAt.toISOString(),
+        createdAt: workflow.createdAt.toISOString(),
       }));
 
       return reply.status(200).send(formattedWorkflows);
@@ -265,6 +278,51 @@ export default async function workflowTemplate(app: FastifyInstance) {
         return reply
           .status(500)
           .send({ error: "An error occurred while updating the workflow." });
+      }
+    }
+  );
+
+  app.delete<{
+    Params: Static<typeof DeleteWorkflowParams>;
+    Reply: Static<
+      typeof DeleteWorkflowResponse | typeof DeleteWorkflowErrorResponse
+    >;
+  }>(
+    "/:id",
+    {
+      schema: {
+        params: DeleteWorkflowParams,
+        response: {
+          200: DeleteWorkflowResponse,
+          404: DeleteWorkflowErrorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      try {
+        const existingWorkflow = await app.prisma.workflowTemplate.findUnique({
+          where: { id },
+        });
+
+        if (!existingWorkflow) {
+          return reply.status(404).send({ error: "Workflow not found." });
+        }
+
+        await app.prisma.workflowTemplate.delete({
+          where: { id },
+        });
+
+        return reply.status(200).send({
+          success: true,
+          message: "Workflow template deleted successfully.",
+        });
+      } catch (error) {
+        app.log.error(error);
+        return reply.status(500).send({
+          error: "An error occurred while deleting the workflow template.",
+        });
       }
     }
   );

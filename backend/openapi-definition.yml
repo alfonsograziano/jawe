@@ -51,7 +51,7 @@ paths:
                       type: string
                     name:
                       type: string
-                    updatedAt:
+                    createdAt:
                       format: date-time
                       type: string
                     status:
@@ -65,7 +65,7 @@ paths:
                   required:
                     - id
                     - name
-                    - updatedAt
+                    - createdAt
                     - status
   /api/v1/workflow-template/{id}:
     get:
@@ -217,6 +217,39 @@ paths:
                     type: string
                 required:
                   - id
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
+    delete:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                required:
+                  - success
+                  - message
         "404":
           description: Default Response
           content:

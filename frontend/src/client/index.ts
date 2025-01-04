@@ -44,4 +44,10 @@ export class Client {
   loadPlugins() {
     return client.GET("/api/v1/plugin/");
   }
+
+  deleteTemplate(templateId: string) {
+    return client.DELETE("/api/v1/workflow-template/{id}", {
+      params: { path: { id: templateId } },
+    });
+  }
 }
