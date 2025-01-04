@@ -10,6 +10,7 @@ import {
   Connection,
   MarkerType,
   Panel,
+  Position,
 } from "@xyflow/react";
 import { useParams } from "react-router";
 import "@xyflow/react/dist/style.css";
@@ -18,6 +19,7 @@ import AddNewPlugin from "../components/AddNewPlugin";
 import { Button, message, Typography } from "antd";
 import BackButton from "../components/Back";
 import { useNavigate } from "react-router-dom";
+import NodeWithToolbar from "../components/NodeWithToolbar";
 
 const { Title } = Typography;
 
@@ -28,22 +30,38 @@ const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
     targetNodes.push(...data.steps);
   }
 
-  const nodes = targetNodes.map((step) => ({
-    id: step.id,
-    ...(step.visualizationMetadata as {
+  const nodes = targetNodes.map((step) => {
+    const metadata = step.visualizationMetadata as {
       position: {
         x: number;
         y: number;
       };
-      data: { label: string };
-    }),
-  }));
+      data: {
+        label: string;
+      };
+    };
+
+    const node = {
+      id: step.id,
+      position: metadata.position,
+      type: "node-with-toolbar",
+      data: {
+        ...metadata.data,
+        forceToolbarVisible: false,
+        toolbarPosition: Position.Left,
+        isEntryPoint: step.id === data.entryPointId,
+      },
+    };
+
+    return node;
+  });
 
   const edges =
     data?.connections?.map((connection) => ({
       id: connection.id,
       source: connection.fromStepId,
       target: connection.toStepId,
+      type: "edge-with-delete",
     })) || [];
 
   return {
@@ -108,6 +126,15 @@ const updateStepInTemplate = (
   return newTemplate;
 };
 
+const deleteStepInTemplate = (template: WorkflowTemplate, stepId: string) => {
+  const newTemplate = structuredClone(template);
+
+  newTemplate.steps =
+    newTemplate.steps && newTemplate.steps.filter((step) => step.id !== stepId);
+
+  return newTemplate;
+};
+
 const addConnection = (template: WorkflowTemplate, connection: Connection) => {
   const newTemplate = structuredClone(template);
 
@@ -124,6 +151,10 @@ const addConnection = (template: WorkflowTemplate, connection: Connection) => {
   }
 
   return newTemplate;
+};
+
+const nodeTypes = {
+  "node-with-toolbar": NodeWithToolbar,
 };
 
 export default function WorkflowTemplateDetails() {
@@ -151,7 +182,20 @@ export default function WorkflowTemplateDetails() {
     if (!template) return;
     const { nodes: formattedNodes, edges: formattedEdges } =
       getNodesAndEdgesFromTemplate(template);
-    setNodes(formattedNodes as any);
+
+    const nodesWithActions = formattedNodes.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        onDelete: async () => {
+          setTemplate(deleteStepInTemplate(template, node.id));
+        },
+        onOpenDetails: async () => {
+          console.log("Open details of: ", node.id);
+        },
+      },
+    }));
+    setNodes(nodesWithActions as any);
     setEdges(formattedEdges as any);
   }, [template]);
 
@@ -169,6 +213,7 @@ export default function WorkflowTemplateDetails() {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         onNodesChange={(changes) => {
           const change = changes[0] as {
             dragging: boolean;
