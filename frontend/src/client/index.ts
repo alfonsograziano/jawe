@@ -11,6 +11,9 @@ export type WorkflowTemplate =
 export type PluginsInfoList =
   paths["/api/v1/plugin/"]["get"]["responses"]["200"]["content"]["application/json"];
 
+export type PluginDetails =
+  paths["/api/v1/plugin/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
+
 export class Client {
   health() {
     return client.GET("/health");
@@ -48,6 +51,12 @@ export class Client {
   deleteTemplate(templateId: string) {
     return client.DELETE("/api/v1/workflow-template/{id}", {
       params: { path: { id: templateId } },
+    });
+  }
+
+  getPluginById(pluginId: string) {
+    return client.GET("/api/v1/plugin/{id}", {
+      params: { path: { id: pluginId } },
     });
   }
 }

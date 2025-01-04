@@ -8,11 +8,20 @@ import healthCheck from "./src/routes/healthcheck";
 import { PrismaClient } from "@prisma/client";
 import fastifyPrisma from "@joggr/fastify-prisma";
 import fastifyCors from "@fastify/cors";
+import { initPluginsRegistry } from "./core/pluginRegistry";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function build(opts?: FastifyServerOptions) {
   const app = fastify(opts).withTypeProvider<TypeBoxTypeProvider>();
 
   app.register(fastifyFormBody);
+
+  const pluginsDir = path.resolve(__dirname, "plugins");
+  await initPluginsRegistry(pluginsDir);
 
   app.register(fastifySwagger, {
     openapi: {

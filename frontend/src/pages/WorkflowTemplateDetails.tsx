@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ReactFlow,
   MiniMap,
@@ -37,6 +37,8 @@ export default function WorkflowTemplateDetails() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
+  const [drawerStepInfo, setDrawerStepInfo] = useState();
+
   const {
     template,
     deleteStep,
@@ -59,13 +61,15 @@ export default function WorkflowTemplateDetails() {
           deleteStep(node.id);
         },
         onOpenDetails: async () => {
-          console.log("Open details of: ", node.id);
+          setDrawerStepInfo(
+            template?.steps?.find((step) => step.id === node.id)
+          );
         },
       },
     }));
     setNodes(nodesWithActions as any);
     setEdges(formattedEdges as any);
-  }, [graphInfo]);
+  }, [graphInfo, template]);
 
   if (!template) return <p>Loading template...</p>;
 
@@ -131,13 +135,11 @@ export default function WorkflowTemplateDetails() {
             {isOutOfSync && <p>You have unsaved changes...</p>}
 
             <StepInfoDrawer
-              onClose={() => {}}
-              open={true}
-              stepInfo={{
-                id: "1234",
-                name: "Hello World plugin",
-                description: "Desc",
+              onClose={() => {
+                setDrawerStepInfo(undefined);
               }}
+              open={typeof drawerStepInfo !== "undefined"}
+              stepInfo={drawerStepInfo}
             />
           </div>
         </Panel>

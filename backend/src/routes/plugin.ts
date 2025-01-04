@@ -1,12 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { Type } from "@sinclair/typebox";
 import { Static } from "@sinclair/typebox";
-import path from "path";
-import fs from "fs/promises";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { pluginRegistry } from "../../core/pluginRegistry";
 
 const ListPluginsResponse = Type.Array(
   Type.Object({
@@ -16,42 +11,23 @@ const ListPluginsResponse = Type.Array(
   })
 );
 
-async function loadPlugins(directory: string) {
-  const plugins = [];
-  const files = await fs.readdir(directory);
+const GetPluginParams = Type.Object({
+  id: Type.String(),
+});
 
-  for (const file of files) {
-    const pluginPath = path.join(directory, file);
+const GetPluginResponse = Type.Object({
+  id: Type.String(),
+  name: Type.String(),
+  description: Type.String(),
+  inputs: Type.Record(Type.String(), Type.Unknown()),
+  outputs: Type.Record(Type.String(), Type.Unknown()),
+});
 
-    const stat = await fs.stat(pluginPath);
+const GetPluginErrorResponse = Type.Object({
+  error: Type.String(),
+});
 
-    if (stat.isDirectory()) {
-      try {
-        const modulePath = path.join(pluginPath, "index.ts");
-
-        const pluginModule = await import(modulePath);
-
-        if (pluginModule.default) {
-          const instance = new pluginModule.default();
-          const info = instance.getPluginInfo();
-
-          plugins.push(info);
-        }
-      } catch (error) {
-        console.log();
-        console.error(`Error loading plugin at ${pluginPath}:`, error);
-      }
-    }
-  }
-
-  return plugins;
-}
-
-export default async function workflowTemplate(app: FastifyInstance) {
-  const pluginsDir = path.resolve(__dirname, "..", "..", "plugins");
-
-  const formattedWorkflows = await loadPlugins(pluginsDir);
-
+export default async function plugin(app: FastifyInstance) {
   app.get<{
     Reply: Static<typeof ListPluginsResponse>;
   }>(
@@ -62,7 +38,36 @@ export default async function workflowTemplate(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      return reply.status(200).send(formattedWorkflows);
+      return reply.status(200).send(pluginRegistry);
+    }
+  );
+
+  app.get<{
+    Params: Static<typeof GetPluginParams>;
+    Reply: Static<typeof GetPluginResponse | typeof GetPluginErrorResponse>;
+  }>(
+    "/:id",
+    {
+      schema: {
+        params: GetPluginParams,
+        response: {
+          200: GetPluginResponse,
+          404: GetPluginErrorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      const plugin = pluginRegistry.find((p) => p.id === id);
+
+      if (!plugin) {
+        return reply
+          .status(404)
+          .send({ error: `Plugin with ID '${id}' not found.` });
+      }
+
+      return reply.status(200).send(plugin);
     }
   );
 }

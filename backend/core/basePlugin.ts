@@ -1,17 +1,19 @@
-import { WorkflowContext } from "./workflowContext";
+import { WorkflowContext } from "../workflowContext";
+
+export type PluginInfo = {
+  id: string;
+  name: string;
+  description: string;
+  inputs: Record<string, unknown>;
+  outputs: Record<string, unknown>;
+};
 
 export interface BasePlugin {
   /**
    * Retrieves plugin metadata, such as name and description.
    * @returns An object containing plugin metadata.
    */
-  getPluginInfo(): {
-    id: string;
-    name: string;
-    description: string;
-    inputs: Record<string, unknown>;
-    outputs: Record<string, unknown>;
-  };
+  getPluginInfo(): PluginInfo;
 
   /**
    * Executes the plugin logic.
