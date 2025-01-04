@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   ReactFlow,
   MiniMap,
@@ -10,148 +10,19 @@ import {
   Connection,
   MarkerType,
   Panel,
-  Position,
 } from "@xyflow/react";
 import { useParams } from "react-router";
 import "@xyflow/react/dist/style.css";
-import { Client, WorkflowTemplate } from "../client";
+import { Client } from "../client";
 import AddNewPlugin from "../components/AddNewPlugin";
 import { Button, message, Typography } from "antd";
 import BackButton from "../components/Back";
 import { useNavigate } from "react-router-dom";
 import NodeWithToolbar from "../components/NodeWithToolbar";
+import { useTemplate } from "../hooks/useTemplate";
+import StepInfoDrawer from "../components/StepInfoDrawer";
 
 const { Title } = Typography;
-
-const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
-  const targetNodes = [];
-
-  if (data?.steps) {
-    targetNodes.push(...data.steps);
-  }
-
-  const nodes = targetNodes.map((step) => {
-    const metadata = step.visualizationMetadata as {
-      position: {
-        x: number;
-        y: number;
-      };
-      data: {
-        label: string;
-      };
-    };
-
-    const node = {
-      id: step.id,
-      position: metadata.position,
-      type: "node-with-toolbar",
-      data: {
-        ...metadata.data,
-        forceToolbarVisible: false,
-        toolbarPosition: Position.Left,
-        isEntryPoint: step.id === data.entryPointId,
-      },
-    };
-
-    return node;
-  });
-
-  const edges =
-    data?.connections?.map((connection) => ({
-      id: connection.id,
-      source: connection.fromStepId,
-      target: connection.toStepId,
-      type: "edge-with-delete",
-    })) || [];
-
-  return {
-    nodes,
-    edges,
-  };
-};
-
-const addNewStepToTemplate = (
-  template: WorkflowTemplate,
-  plugin: { id: string; name: string }
-) => {
-  const newTemplate = structuredClone(template);
-
-  const newStep = {
-    id: crypto.randomUUID(),
-    name: plugin.name,
-    type: plugin.id,
-    inputs: {},
-    visualizationMetadata: {
-      position: { x: 500, y: 500 },
-      data: { label: plugin.name },
-    },
-  };
-
-  if (!newTemplate.steps) newTemplate.steps = [];
-  newTemplate.steps.push(newStep);
-
-  if (!newTemplate.entryPointId) {
-    newTemplate.entryPointId = newStep.id;
-  }
-
-  return newTemplate;
-};
-
-const updateStepInTemplate = (
-  template: WorkflowTemplate,
-  plugin: {
-    id: string;
-    position: {
-      x: number;
-      y: number;
-    };
-  }
-) => {
-  const newTemplate = structuredClone(template);
-
-  const step =
-    newTemplate.steps &&
-    newTemplate.steps.length > 0 &&
-    newTemplate.steps.find((step) => step.id === plugin.id);
-
-  if (step) {
-    step.visualizationMetadata = {
-      ...(step.visualizationMetadata as {}),
-      position: plugin.position,
-    };
-
-    return newTemplate;
-  }
-
-  return newTemplate;
-};
-
-const deleteStepInTemplate = (template: WorkflowTemplate, stepId: string) => {
-  const newTemplate = structuredClone(template);
-
-  newTemplate.steps =
-    newTemplate.steps && newTemplate.steps.filter((step) => step.id !== stepId);
-
-  return newTemplate;
-};
-
-const addConnection = (template: WorkflowTemplate, connection: Connection) => {
-  const newTemplate = structuredClone(template);
-
-  const newConnection = {
-    id: crypto.randomUUID(),
-    fromStepId: connection.source,
-    toStepId: connection.target,
-  };
-
-  if (newTemplate.connections && newTemplate.connections.length > 0) {
-    newTemplate.connections.push(newConnection);
-  } else {
-    newTemplate.connections = [newConnection];
-  }
-
-  return newTemplate;
-};
 
 const nodeTypes = {
   "node-with-toolbar": NodeWithToolbar,
@@ -166,29 +37,26 @@ export default function WorkflowTemplateDetails() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  const [template, setTemplate] = useState<WorkflowTemplate | undefined>();
-
-  const loadTemplate = async (id: string) => {
-    const client = new Client();
-    const { data, error } = await client.loadTemplateDetails(id);
-    setTemplate(data);
-  };
+  const {
+    template,
+    deleteStep,
+    updateStepPosition,
+    addStep,
+    addConnection,
+    graphInfo,
+    isOutOfSync,
+    deleteTemplate,
+  } = useTemplate(id);
 
   useEffect(() => {
-    loadTemplate(id);
-  }, [id]);
-
-  useEffect(() => {
-    if (!template) return;
-    const { nodes: formattedNodes, edges: formattedEdges } =
-      getNodesAndEdgesFromTemplate(template);
+    const { nodes: formattedNodes, edges: formattedEdges } = graphInfo;
 
     const nodesWithActions = formattedNodes.map((node) => ({
       ...node,
       data: {
         ...node.data,
         onDelete: async () => {
-          setTemplate(deleteStepInTemplate(template, node.id));
+          deleteStep(node.id);
         },
         onOpenDetails: async () => {
           console.log("Open details of: ", node.id);
@@ -197,7 +65,7 @@ export default function WorkflowTemplateDetails() {
     }));
     setNodes(nodesWithActions as any);
     setEdges(formattedEdges as any);
-  }, [template]);
+  }, [graphInfo]);
 
   if (!template) return <p>Loading template...</p>;
 
@@ -225,25 +93,17 @@ export default function WorkflowTemplateDetails() {
             type: string;
           };
           if (!change.dragging && change.type === "position") {
-            const newTemplate = updateStepInTemplate(template, change);
-            setTemplate(newTemplate);
+            updateStepPosition(change);
           }
           onNodesChange(changes);
         }}
-        onEdgesChange={(changes) => {
-          onEdgesChange(changes);
-        }}
-        onConnect={(params: Connection) => {
-          setTemplate(addConnection(template, params));
-        }}
-        onDelete={(params) => {
-          console.log(params);
-        }}
+        onEdgesChange={onEdgesChange}
+        onConnect={(params: Connection) => addConnection(params)}
         defaultEdgeOptions={{
           type: "floating",
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: "#b1b1b7",
+            color: "#000",
           },
         }}
       >
@@ -253,12 +113,7 @@ export default function WorkflowTemplateDetails() {
             <Title level={3} style={{ margin: 0 }}>
               {template.name}
             </Title>
-            <AddNewPlugin
-              onSelect={(plugin) => {
-                const newTemplate = addNewStepToTemplate(template, plugin);
-                setTemplate(newTemplate);
-              }}
-            />
+            <AddNewPlugin onSelect={addStep} />
             <Button onClick={saveTemplate} type="primary">
               Save
             </Button>
@@ -267,12 +122,23 @@ export default function WorkflowTemplateDetails() {
               color="danger"
               variant="solid"
               onClick={async () => {
-                await new Client().deleteTemplate(template.id);
+                await deleteTemplate();
                 navigate(-1);
               }}
             >
               Delete template
             </Button>
+            {isOutOfSync && <p>You have unsaved changes...</p>}
+
+            <StepInfoDrawer
+              onClose={() => {}}
+              open={true}
+              stepInfo={{
+                id: "1234",
+                name: "Hello World plugin",
+                description: "Desc",
+              }}
+            />
           </div>
         </Panel>
         <Controls />
