@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -21,9 +15,10 @@ model WorkflowTemplate {
   workflows    WorkflowRun[]
   entryPoint   Step?                  @relation("entryPointStep", fields: [entryPointId], references: [id])
   entryPointId String?                @unique
-  status       WorkflowTemplateStatus @default(DRAFT) // Workflow status
+  status       WorkflowTemplateStatus @default(DRAFT)
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
+  triggers     Trigger[]
 }
 
 model Step {
@@ -76,6 +71,17 @@ model StepRun {
   output    Json
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
+}
+
+model Trigger {
+  id                    String           @id @default(uuid())
+  workflowTemplate      WorkflowTemplate @relation(fields: [workflowTemplateId], references: [id], onDelete: Cascade)
+  workflowTemplateId    String
+  type                  String
+  settings              Json
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  visualizationMetadata Json
 }
 
 enum WorkflowStatus {

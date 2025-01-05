@@ -8,8 +8,17 @@ export const deleteStepInTemplate = (
 ) => {
   const newTemplate = structuredClone(template);
 
+  // Remove the step
   newTemplate.steps =
     newTemplate.steps && newTemplate.steps.filter((step) => step.id !== stepId);
+
+  // Remove step connections related to the step
+  newTemplate.connections =
+    newTemplate.connections &&
+    newTemplate.connections.filter(
+      (connection) =>
+        connection.fromStepId !== stepId && connection.toStepId !== stepId
+    );
 
   return newTemplate;
 };
@@ -69,6 +78,20 @@ const updateStepPositionInTemplate = (
     return newTemplate;
   }
 
+  const trigger =
+    newTemplate.triggers &&
+    newTemplate.triggers.length > 0 &&
+    newTemplate.triggers.find((trigger) => trigger.id === plugin.id);
+
+  if (trigger) {
+    trigger.visualizationMetadata = {
+      ...(trigger.visualizationMetadata as {}),
+      position: plugin.position,
+    };
+
+    return newTemplate;
+  }
+
   return newTemplate;
 };
 
@@ -119,19 +142,46 @@ export const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
       };
     };
 
+    let nodeType = "node-with-toolbar";
+    if (step.id === data.entryPointId) nodeType = "entry-point-with-toolbar";
+
     const node = {
       id: step.id,
       position: metadata.position,
-      type: "node-with-toolbar",
+      type: nodeType,
       data: {
         ...metadata.data,
         forceToolbarVisible: false,
         toolbarPosition: Position.Left,
-        isEntryPoint: step.id === data.entryPointId,
       },
     };
 
     return node;
+  });
+
+  data.triggers.forEach((trigger) => {
+    const metadata = trigger.visualizationMetadata as {
+      position: {
+        x: number;
+        y: number;
+      };
+      data: {
+        label: string;
+      };
+    };
+
+    let nodeType = "trigger-with-toolbar";
+
+    nodes.push({
+      id: trigger.id,
+      position: metadata.position,
+      type: nodeType,
+      data: {
+        ...metadata.data,
+        forceToolbarVisible: false,
+        toolbarPosition: Position.Left,
+      },
+    });
   });
 
   const edges =
@@ -141,10 +191,58 @@ export const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
       target: connection.toStepId,
     })) || [];
 
+  if (data.entryPointId) {
+    data.triggers.forEach((trigger) => {
+      edges.push({
+        id: trigger.id,
+        source: trigger.id,
+        target: data.entryPointId as string,
+      });
+    });
+  }
+
   return {
     nodes,
     edges,
   };
+};
+
+export const addTriggerToTemplate = (
+  template: WorkflowTemplate,
+  trigger: {
+    id: string;
+    name: string;
+  }
+) => {
+  const newTemplate = structuredClone(template);
+
+  const newTrigger = {
+    id: trigger.id,
+    type: trigger.name,
+    settings: {},
+    visualizationMetadata: {
+      position: { x: 500, y: 500 },
+      data: { label: trigger.name },
+    },
+  };
+
+  if (!newTemplate.triggers) newTemplate.triggers = [];
+  newTemplate.triggers.push(newTrigger);
+
+  return newTemplate;
+};
+
+export const deleteTriggerFromTemplate = (
+  template: WorkflowTemplate,
+  triggerId: string
+) => {
+  const newTemplate = structuredClone(template);
+
+  newTemplate.triggers =
+    newTemplate.triggers &&
+    newTemplate.triggers.filter((t) => t.id !== triggerId);
+
+  return newTemplate;
 };
 
 export const useTemplate = (templateId: string) => {
@@ -200,6 +298,14 @@ export const useTemplate = (templateId: string) => {
     deleteTemplate: async () => {
       if (!template) return;
       return new Client().deleteTemplate(template.id);
+    },
+    addTrigger: (trigger: { id: string; name: string }) => {
+      if (!template) return;
+      setTemplate(addTriggerToTemplate(template, trigger));
+    },
+    deleteTrigger: (triggerId: string) => {
+      if (!template) return;
+      setTemplate(deleteTriggerFromTemplate(template, triggerId));
     },
   };
 };

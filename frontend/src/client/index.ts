@@ -14,6 +14,14 @@ export type PluginsInfoList =
 export type PluginDetails =
   paths["/api/v1/plugin/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
 
+export type TriggersInfoList =
+  paths["/api/v1/trigger/"]["get"]["responses"]["200"]["content"]["application/json"];
+
+export type TriggerDetails =
+  paths["/api/v1/trigger/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
+
+export type WorkflowStep = NonNullable<WorkflowTemplate["steps"]>[number];
+
 export class Client {
   health() {
     return client.GET("/health");
@@ -46,6 +54,10 @@ export class Client {
 
   loadPlugins() {
     return client.GET("/api/v1/plugin/");
+  }
+
+  loadTriggers() {
+    return client.GET("/api/v1/trigger/");
   }
 
   deleteTemplate(templateId: string) {

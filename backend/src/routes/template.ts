@@ -25,12 +25,20 @@ const StepConnections = Type.Object({
   toStepId: Type.String(),
 });
 
+const Trigger = Type.Object({
+  id: Type.String(),
+  type: Type.String(),
+  settings: Type.Any(),
+  visualizationMetadata: Type.Any(),
+});
+
 const UpdateWorkflowBody = Type.Object({
   name: Type.Optional(Type.String()),
   steps: Type.Optional(Type.Array(Step)),
   connections: Type.Optional(Type.Array(StepConnections)),
   entryPointId: Type.Optional(Type.String()),
   status: Type.Optional(TemplateStatus),
+  triggers: Type.Array(Trigger),
 });
 
 const UpdateWorkflowParams = Type.Object({
@@ -62,6 +70,7 @@ const GetWorkflowResponse = Type.Object({
   steps: Type.Optional(Type.Array(Step)),
   connections: Type.Optional(Type.Array(StepConnections)),
   updatedAt: Type.String({ format: "date-time" }),
+  triggers: Type.Array(Trigger),
 });
 
 const DeleteWorkflowParams = Type.Object({
@@ -150,6 +159,7 @@ export default async function workflowTemplate(app: FastifyInstance) {
         include: {
           steps: true,
           connections: true,
+          triggers: true,
         },
       });
 
@@ -165,13 +175,13 @@ export default async function workflowTemplate(app: FastifyInstance) {
         steps: workflow.steps,
         connections: workflow.connections,
         updatedAt: workflow.updatedAt.toISOString(),
+        triggers: workflow.triggers,
       };
 
       return reply.status(200).send(formattedWorkflow);
     }
   );
 
-  // Route to update an existing Workflow
   app.put<{
     Params: Static<typeof UpdateWorkflowParams>;
     Body: Static<typeof UpdateWorkflowBody>;
@@ -187,20 +197,21 @@ export default async function workflowTemplate(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params;
-      const { name, steps, connections, entryPointId, status } = request.body;
+      const { name, steps, connections, entryPointId, status, triggers } =
+        request.body;
 
       try {
-        // Fetch existing steps and connections
+        // Fetch existing workflow including steps, connections, and triggers
         const existingWorkflow = await app.prisma.workflowTemplate.findUnique({
           where: { id },
-          include: { steps: true, connections: true },
+          include: { steps: true, connections: true, triggers: true },
         });
 
         if (!existingWorkflow) {
           return reply.status(404).send({ error: "Workflow not found." });
         }
 
-        // Determine steps and connections to delete
+        // Determine steps, connections, and triggers to delete
         const stepIdsToDelete = existingWorkflow.steps
           .filter(
             (existingStep) =>
@@ -217,6 +228,13 @@ export default async function workflowTemplate(app: FastifyInstance) {
           )
           .map((connection) => connection.id);
 
+        const triggerIdsToDelete = existingWorkflow.triggers
+          .filter(
+            (existingTrigger) =>
+              !triggers?.some((trigger) => trigger.id === existingTrigger.id)
+          )
+          .map((trigger) => trigger.id);
+
         // Perform deletions
         await app.prisma.step.deleteMany({
           where: { id: { in: stepIdsToDelete } },
@@ -224,6 +242,10 @@ export default async function workflowTemplate(app: FastifyInstance) {
 
         await app.prisma.connection.deleteMany({
           where: { id: { in: connectionIdsToDelete } },
+        });
+
+        await app.prisma.trigger.deleteMany({
+          where: { id: { in: triggerIdsToDelete } },
         });
 
         // Upsert each step individually and link them to the workflow
@@ -234,14 +256,14 @@ export default async function workflowTemplate(app: FastifyInstance) {
               id: step.id,
               name: step.name,
               type: step.type,
-              workflowTemplateId: id, // Link step to workflow
-              inputs: step.inputs || {}, // Provide a default value if inputs are undefined
-              visualizationMetadata: step.visualizationMetadata || {}, // Default value
+              workflowTemplateId: id,
+              inputs: step.inputs || {},
+              visualizationMetadata: step.visualizationMetadata || {},
             },
             update: {
               name: step.name,
               type: step.type,
-              workflowTemplateId: id, // Ensure linkage is maintained
+              workflowTemplateId: id,
               inputs: step.inputs,
               visualizationMetadata: step.visualizationMetadata,
             },
@@ -254,14 +276,35 @@ export default async function workflowTemplate(app: FastifyInstance) {
             where: { id: connection.id },
             create: {
               ...connection,
-              workflowTemplateId: id, // Link connection to workflow
+              workflowTemplateId: id,
             },
             update: {
               ...connection,
-              workflowTemplateId: id, // Ensure linkage is maintained
+              workflowTemplateId: id,
             },
           });
         }
+
+        // Upsert each trigger individually and link them to the workflow
+        for (const trigger of triggers || []) {
+          await app.prisma.trigger.upsert({
+            where: { id: trigger.id },
+            create: {
+              id: trigger.id,
+              type: trigger.type,
+              settings: trigger.settings,
+              workflowTemplateId: id,
+              visualizationMetadata: trigger.visualizationMetadata || {},
+            },
+            update: {
+              type: trigger.type,
+              settings: trigger.settings,
+              visualizationMetadata: trigger.visualizationMetadata,
+              workflowTemplateId: id,
+            },
+          });
+        }
+
         // Update the workflow template
         const updatedWorkflow = await app.prisma.workflowTemplate.update({
           where: { id },

@@ -13,7 +13,7 @@ import {
 } from "@xyflow/react";
 import { useParams } from "react-router";
 import "@xyflow/react/dist/style.css";
-import { Client } from "../client";
+import { Client, WorkflowStep } from "../client";
 import AddNewPlugin from "../components/AddNewPlugin";
 import { Button, message, Typography } from "antd";
 import BackButton from "../components/Back";
@@ -21,11 +21,16 @@ import { useNavigate } from "react-router-dom";
 import NodeWithToolbar from "../components/NodeWithToolbar";
 import { useTemplate } from "../hooks/useTemplate";
 import StepInfoDrawer from "../components/StepInfoDrawer";
+import AddNewTrigger from "../components/AddNewTrigger";
+import EntryPointWithToolbar from "../components/EntryPointNode";
+import TriggerWithToolbar from "../components/TriggerWithToolbar";
 
 const { Title } = Typography;
 
 const nodeTypes = {
   "node-with-toolbar": NodeWithToolbar,
+  "entry-point-with-toolbar": EntryPointWithToolbar,
+  "trigger-with-toolbar": TriggerWithToolbar,
 };
 
 export default function WorkflowTemplateDetails() {
@@ -37,7 +42,9 @@ export default function WorkflowTemplateDetails() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  const [drawerStepInfo, setDrawerStepInfo] = useState();
+  const [drawerStepInfo, setDrawerStepInfo] = useState<
+    WorkflowStep | undefined
+  >();
 
   const {
     template,
@@ -48,6 +55,8 @@ export default function WorkflowTemplateDetails() {
     graphInfo,
     isOutOfSync,
     deleteTemplate,
+    addTrigger,
+    deleteTrigger,
   } = useTemplate(id);
 
   useEffect(() => {
@@ -58,7 +67,13 @@ export default function WorkflowTemplateDetails() {
       data: {
         ...node.data,
         onDelete: async () => {
-          deleteStep(node.id);
+          if (node.type === "node-with-toolbar" || "entry-point-with-toolbar") {
+            deleteStep(node.id);
+          }
+
+          if (node.type === "trigger-with-toolbar") {
+            deleteTrigger(node.id);
+          }
         },
         onOpenDetails: async () => {
           setDrawerStepInfo(
@@ -118,6 +133,8 @@ export default function WorkflowTemplateDetails() {
               {template.name}
             </Title>
             <AddNewPlugin onSelect={addStep} />
+            <AddNewTrigger onSelect={addTrigger} />
+
             <Button onClick={saveTemplate} type="primary">
               Save
             </Button>

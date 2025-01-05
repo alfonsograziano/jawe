@@ -148,6 +148,12 @@ export interface paths {
                             }[];
                             /** Format: date-time */
                             updatedAt: string;
+                            triggers: {
+                                id: string;
+                                type: string;
+                                settings: unknown;
+                                visualizationMetadata: unknown;
+                            }[];
                         };
                     };
                 };
@@ -173,7 +179,7 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: {
+            requestBody: {
                 content: {
                     "application/json": {
                         name?: string;
@@ -191,6 +197,12 @@ export interface paths {
                         }[];
                         entryPointId?: string;
                         status?: "DRAFT" | "PUBLISHED";
+                        triggers: {
+                            id: string;
+                            type: string;
+                            settings: unknown;
+                            visualizationMetadata: unknown;
+                        }[];
                     };
                 };
             };
@@ -334,6 +346,97 @@ export interface paths {
                             outputs: {
                                 [key: string]: unknown;
                             };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trigger/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            name: string;
+                            id: string;
+                            description: string;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trigger/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            name: string;
+                            description: string;
                         };
                     };
                 };

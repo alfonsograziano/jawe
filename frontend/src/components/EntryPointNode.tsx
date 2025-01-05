@@ -2,7 +2,7 @@ import { Position, NodeToolbar, Handle } from "@xyflow/react";
 import { Button } from "antd";
 import { DeleteOutlined, InfoCircleOutlined } from "@ant-design/icons";
 
-export default function NodeWithToolbar({
+export default function EntryPointWithToolbar({
   data,
 }: {
   data: {
@@ -33,7 +33,7 @@ export default function NodeWithToolbar({
 
       <Handle type="target" position={Position.Top} isConnectable={true} />
       <Handle type="source" position={Position.Bottom} isConnectable={true} />
-
+      <h3>Entry point</h3>
       <div>{data.label}</div>
     </>
   );

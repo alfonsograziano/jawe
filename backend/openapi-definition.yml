@@ -132,11 +132,28 @@ paths:
                   updatedAt:
                     format: date-time
                     type: string
+                  triggers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          type: string
+                        settings: {}
+                        visualizationMetadata: {}
+                      required:
+                        - id
+                        - type
+                        - settings
+                        - visualizationMetadata
                 required:
                   - id
                   - name
                   - status
                   - updatedAt
+                  - triggers
         "404":
           description: Default Response
           content:
@@ -199,6 +216,25 @@ paths:
                     - type: string
                       enum:
                         - PUBLISHED
+                triggers:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      type:
+                        type: string
+                      settings: {}
+                      visualizationMetadata: {}
+                    required:
+                      - id
+                      - type
+                      - settings
+                      - visualizationMetadata
+              required:
+                - triggers
+        required: true
       parameters:
         - schema:
             type: string
@@ -317,6 +353,65 @@ paths:
                   - description
                   - inputs
                   - outputs
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
+  /api/v1/trigger/:
+    get:
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    id:
+                      type: string
+                    description:
+                      type: string
+                  required:
+                    - name
+                    - id
+                    - description
+  /api/v1/trigger/{id}:
+    get:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
         "404":
           description: Default Response
           content:
