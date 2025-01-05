@@ -245,6 +245,21 @@ export const deleteTriggerFromTemplate = (
   return newTemplate;
 };
 
+export const removeConnectionsFromTemplate = (
+  template: WorkflowTemplate,
+  connectionIds: string[]
+) => {
+  // Create a deep copy of the template
+  const newTemplate = structuredClone(template);
+
+  // Filter out connections whose IDs are in the connectionIds array
+  newTemplate.connections =
+    newTemplate.connections &&
+    newTemplate.connections.filter((t) => !connectionIds.includes(t.id));
+
+  return newTemplate;
+};
+
 export const useTemplate = (templateId: string) => {
   const [savedTemplate, setSavedTemplate] = useState<
     WorkflowTemplate | undefined
@@ -287,7 +302,7 @@ export const useTemplate = (templateId: string) => {
         template.id,
         template
       );
-      if (refetch) await fetchTemplate();
+      if (refetch && typeof error === "undefined") await fetchTemplate();
       return { data, error };
     },
     deleteStep: (stepId: string) => {
@@ -323,8 +338,12 @@ export const useTemplate = (templateId: string) => {
     publishTemplate: async () => {
       if (!template) return;
       const { data, error } = await new Client().publishTemplate(template.id);
-      await fetchTemplate();
+      if (typeof error === "undefined") await fetchTemplate();
       return { data, error };
+    },
+    removeConnections: (connections: string[]) => {
+      if (!template) return;
+      setTemplate(removeConnectionsFromTemplate(template, connections));
     },
   };
 };

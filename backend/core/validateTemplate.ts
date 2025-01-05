@@ -32,6 +32,20 @@ export const Step = Type.Object({
   visualizationMetadata: VisualizationMetadata,
 });
 
+export const TemplateStatus = Type.Union([
+  Type.Literal("DRAFT"),
+  Type.Literal("PUBLISHED"),
+]);
+
+export const WorkflowTemplate = Type.Object({
+  name: Type.String(),
+  steps: Type.Array(Step),
+  connections: Type.Array(StepConnections),
+  entryPointId: Type.String(),
+  status: TemplateStatus,
+  triggers: Type.Array(Trigger),
+});
+
 export type VisualizationMetadataType = Static<typeof VisualizationMetadata>;
 
 export function validateVisualizationMetadata(
@@ -42,4 +56,110 @@ export function validateVisualizationMetadata(
   }
 
   throw new Error("Cannot validate visual metadata");
+}
+
+export function validateTemplate(template: any) {
+  validateTemplateStructure(template);
+  validateEntryPoint(template);
+  validateConnections(template);
+  validateTriggers(template);
+  validateSteps(template);
+  return true;
+}
+
+function validateTemplateStructure(template: any) {
+  if (!Value.Check(WorkflowTemplate, template)) {
+    throw new Error("Template structure is invalid");
+  }
+}
+
+export function validateEntryPoint(template: any) {
+  const stepIds = new Set(template.steps.map((step: any) => step.id));
+
+  if (!stepIds.has(template.entryPointId)) {
+    throw new Error("Entry point ID must refer to an existing step");
+  }
+
+  const entryPointTargets = template.connections.filter(
+    (conn: any) => conn.toStepId === template.entryPointId
+  );
+  if (entryPointTargets.length > 0) {
+    throw new Error("Entry point must not be a target of any connection");
+  }
+}
+
+export function validateConnections(template: any) {
+  const adjacencyList = new Map();
+  template.connections.forEach((conn: any) => {
+    if (!adjacencyList.has(conn.fromStepId)) {
+      adjacencyList.set(conn.fromStepId, []);
+    }
+    adjacencyList.get(conn.fromStepId).push(conn.toStepId);
+  });
+
+  const stepIds = new Set<string>(template.steps.map((step: any) => step.id));
+  const visited = new Set<string>();
+  const recStack = new Set<string>();
+
+  function hasCycle(
+    node: string,
+    visited: Set<string>,
+    recStack: Set<string>
+  ): boolean {
+    if (!visited.has(node)) {
+      visited.add(node);
+      recStack.add(node);
+
+      const neighbors = adjacencyList.get(node) || [];
+      for (const neighbor of neighbors) {
+        if (!visited.has(neighbor) && hasCycle(neighbor, visited, recStack)) {
+          return true;
+        } else if (recStack.has(neighbor)) {
+          return true;
+        }
+      }
+    }
+    recStack.delete(node);
+    return false;
+  }
+
+  for (const node of stepIds) {
+    if (hasCycle(node, visited, recStack)) {
+      throw new Error("Workflow connections must form a valid DAG");
+    }
+  }
+
+  const reachableSteps = new Set<string>();
+  function dfs(node: string) {
+    if (!reachableSteps.has(node)) {
+      reachableSteps.add(node);
+      const neighbors = adjacencyList.get(node) || [];
+      neighbors.forEach(dfs);
+    }
+  }
+
+  dfs(template.entryPointId);
+
+  if (reachableSteps.size !== stepIds.size) {
+    throw new Error("All steps must be connected to the workflow");
+  }
+}
+
+export function validateTriggers(template: any) {
+  if (!template.triggers || template.triggers.length === 0) {
+    throw new Error("At least one trigger is required for the workflow");
+  }
+
+  template.triggers.forEach((trigger: any) => {
+    validateVisualizationMetadata(trigger.visualizationMetadata);
+  });
+}
+
+export function validateSteps(template: any) {
+  template.steps.forEach((step: any) => {
+    validateVisualizationMetadata(step.visualizationMetadata);
+    if (!step.inputs) {
+      throw new Error(`Step ${step.id} is missing required inputs`);
+    }
+  });
 }

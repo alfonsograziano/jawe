@@ -4,18 +4,15 @@ import { Static } from "@sinclair/typebox";
 import {
   Step,
   StepConnections,
+  TemplateStatus,
   Trigger,
+  validateTemplate,
   validateVisualizationMetadata,
 } from "../../core/validateTemplate";
 
 const CreateWorkflowBody = Type.Object({
   name: Type.String(),
 });
-
-const TemplateStatus = Type.Union([
-  Type.Literal("DRAFT"),
-  Type.Literal("PUBLISHED"),
-]);
 
 const UpdateWorkflowBody = Type.Object({
   name: Type.Optional(Type.String()),
@@ -207,6 +204,26 @@ export default async function workflowTemplate(app: FastifyInstance) {
       const { id } = request.params;
       const { name, steps, connections, entryPointId, status, triggers } =
         request.body;
+
+      try {
+        validateTemplate({
+          name,
+          steps,
+          connections,
+          entryPointId,
+          status,
+          triggers,
+        });
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred";
+
+        return reply.status(500).send({
+          error: errorMessage,
+        });
+      }
 
       try {
         // Fetch existing workflow including steps, connections, and triggers
@@ -406,10 +423,21 @@ export default async function workflowTemplate(app: FastifyInstance) {
             steps: true,
             connections: true,
             triggers: true,
-            // Include other related properties as necessary
           },
         });
 
+        try {
+          validateTemplate(workflowTemplate);
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred";
+
+          return reply.status(500).send({
+            error: errorMessage,
+          });
+        }
         if (!workflowTemplate) {
           return reply
             .status(404)

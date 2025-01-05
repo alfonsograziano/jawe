@@ -13,7 +13,7 @@ import {
 } from "@xyflow/react";
 import { useParams } from "react-router";
 import "@xyflow/react/dist/style.css";
-import { Client, WorkflowStep } from "../client";
+import { WorkflowStep } from "../client";
 import AddNewPlugin from "../components/AddNewPlugin";
 import { Button, message, Typography } from "antd";
 import BackButton from "../components/Back";
@@ -52,6 +52,7 @@ export default function WorkflowTemplateDetails() {
     updateStepPosition,
     addStep,
     addConnection,
+    removeConnections,
     graphInfo,
     isOutOfSync,
     deleteTemplate,
@@ -95,7 +96,7 @@ export default function WorkflowTemplateDetails() {
     if (!result) return;
     const { data, error } = result;
     if (data) message.success("Workflow template saved 🎉");
-    if (error) message.success("Error in updating the template...");
+    if (error) message.error(error.error);
   };
 
   const publishTemplateAndShowFeedback = async () => {
@@ -103,7 +104,7 @@ export default function WorkflowTemplateDetails() {
     if (!result) return;
     const { data, error } = result;
     if (data) message.success("Workflow template successfilly published 🎉");
-    if (error) message.success("Error in publishing the template...");
+    if (error) message.error(error.error);
   };
 
   return (
@@ -136,6 +137,9 @@ export default function WorkflowTemplateDetails() {
             color: "#000",
           },
         }}
+        onEdgesDelete={(edges: { id: string }[]) =>
+          removeConnections(edges.map((edge) => edge.id))
+        }
       >
         <Panel>
           <div style={{ display: "flex", gap: 20 }}>
