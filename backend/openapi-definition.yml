@@ -109,11 +109,34 @@ paths:
                         type:
                           type: string
                         inputs: {}
-                        visualizationMetadata: {}
+                        visualizationMetadata:
+                          type: object
+                          properties:
+                            position:
+                              type: object
+                              properties:
+                                x:
+                                  type: number
+                                y:
+                                  type: number
+                              required:
+                                - x
+                                - y
+                            data:
+                              type: object
+                              properties:
+                                label:
+                                  type: string
+                              required:
+                                - label
+                          required:
+                            - position
+                            - data
                       required:
                         - id
                         - name
                         - type
+                        - visualizationMetadata
                   connections:
                     type: array
                     items:
@@ -142,7 +165,29 @@ paths:
                         type:
                           type: string
                         settings: {}
-                        visualizationMetadata: {}
+                        visualizationMetadata:
+                          type: object
+                          properties:
+                            position:
+                              type: object
+                              properties:
+                                x:
+                                  type: number
+                                y:
+                                  type: number
+                              required:
+                                - x
+                                - y
+                            data:
+                              type: object
+                              properties:
+                                label:
+                                  type: string
+                              required:
+                                - label
+                          required:
+                            - position
+                            - data
                       required:
                         - id
                         - type
@@ -186,11 +231,34 @@ paths:
                       type:
                         type: string
                       inputs: {}
-                      visualizationMetadata: {}
+                      visualizationMetadata:
+                        type: object
+                        properties:
+                          position:
+                            type: object
+                            properties:
+                              x:
+                                type: number
+                              y:
+                                type: number
+                            required:
+                              - x
+                              - y
+                          data:
+                            type: object
+                            properties:
+                              label:
+                                type: string
+                            required:
+                              - label
+                        required:
+                          - position
+                          - data
                     required:
                       - id
                       - name
                       - type
+                      - visualizationMetadata
                 connections:
                   type: array
                   items:
@@ -226,7 +294,29 @@ paths:
                       type:
                         type: string
                       settings: {}
-                      visualizationMetadata: {}
+                      visualizationMetadata:
+                        type: object
+                        properties:
+                          position:
+                            type: object
+                            properties:
+                              x:
+                                type: number
+                              y:
+                                type: number
+                            required:
+                              - x
+                              - y
+                          data:
+                            type: object
+                            properties:
+                              label:
+                                type: string
+                            required:
+                              - label
+                        required:
+                          - position
+                          - data
                     required:
                       - id
                       - type
@@ -286,6 +376,51 @@ paths:
                 required:
                   - success
                   - message
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
+  /api/v1/workflow-template/{id}/publish:
+    patch:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                required:
+                  - success
+                  - message
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
         "404":
           description: Default Response
           content:

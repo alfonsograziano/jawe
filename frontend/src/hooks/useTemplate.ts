@@ -71,7 +71,7 @@ const updateStepPositionInTemplate = (
 
   if (step) {
     step.visualizationMetadata = {
-      ...(step.visualizationMetadata as {}),
+      ...step.visualizationMetadata,
       position: plugin.position,
     };
 
@@ -85,7 +85,7 @@ const updateStepPositionInTemplate = (
 
   if (trigger) {
     trigger.visualizationMetadata = {
-      ...(trigger.visualizationMetadata as {}),
+      ...trigger.visualizationMetadata,
       position: plugin.position,
     };
 
@@ -252,12 +252,16 @@ export const useTemplate = (templateId: string) => {
 
   const [template, setTemplate] = useState<WorkflowTemplate | undefined>();
 
-  useEffect(() => {
+  const fetchTemplate = async () => {
     const client = new Client();
-    client.loadTemplateDetails(templateId).then((res) => {
-      setTemplate(res.data);
-      setSavedTemplate(res.data);
-    });
+    const { data } = await client.loadTemplateDetails(templateId);
+
+    setTemplate(data);
+    setSavedTemplate(data);
+  };
+
+  useEffect(() => {
+    fetchTemplate();
   }, [templateId]);
 
   const graphInfo = useMemo(() => {
@@ -276,6 +280,16 @@ export const useTemplate = (templateId: string) => {
   return {
     template,
     setTemplate,
+    saveTemplate: async (refetch = true) => {
+      if (!template) return;
+      const client = new Client();
+      const { data, error } = await client.updateTemplate(
+        template.id,
+        template
+      );
+      if (refetch) await fetchTemplate();
+      return { data, error };
+    },
     deleteStep: (stepId: string) => {
       if (!template) return;
       setTemplate(deleteStepInTemplate(template, stepId));
@@ -294,7 +308,6 @@ export const useTemplate = (templateId: string) => {
     },
     isOutOfSync,
     graphInfo,
-    saveTemplate: () => {},
     deleteTemplate: async () => {
       if (!template) return;
       return new Client().deleteTemplate(template.id);
@@ -306,6 +319,12 @@ export const useTemplate = (templateId: string) => {
     deleteTrigger: (triggerId: string) => {
       if (!template) return;
       setTemplate(deleteTriggerFromTemplate(template, triggerId));
+    },
+    publishTemplate: async () => {
+      if (!template) return;
+      const { data, error } = await new Client().publishTemplate(template.id);
+      await fetchTemplate();
+      return { data, error };
     },
   };
 };

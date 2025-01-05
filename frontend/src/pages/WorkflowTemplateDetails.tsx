@@ -57,6 +57,8 @@ export default function WorkflowTemplateDetails() {
     deleteTemplate,
     addTrigger,
     deleteTrigger,
+    saveTemplate,
+    publishTemplate,
   } = useTemplate(id);
 
   useEffect(() => {
@@ -88,11 +90,20 @@ export default function WorkflowTemplateDetails() {
 
   if (!template) return <p>Loading template...</p>;
 
-  const saveTemplate = async () => {
-    const client = new Client();
-    const { data, error } = await client.updateTemplate(template?.id, template);
-    if (data) message.success("Workflow template created 🎉");
+  const saveTemplateAndShowFeedback = async () => {
+    const result = await saveTemplate();
+    if (!result) return;
+    const { data, error } = result;
+    if (data) message.success("Workflow template saved 🎉");
     if (error) message.success("Error in updating the template...");
+  };
+
+  const publishTemplateAndShowFeedback = async () => {
+    const result = await publishTemplate();
+    if (!result) return;
+    const { data, error } = result;
+    if (data) message.success("Workflow template successfilly published 🎉");
+    if (error) message.success("Error in publishing the template...");
   };
 
   return (
@@ -135,7 +146,7 @@ export default function WorkflowTemplateDetails() {
             <AddNewPlugin onSelect={addStep} />
             <AddNewTrigger onSelect={addTrigger} />
 
-            <Button onClick={saveTemplate} type="primary">
+            <Button onClick={saveTemplateAndShowFeedback} type="primary">
               Save
             </Button>
 
@@ -149,6 +160,9 @@ export default function WorkflowTemplateDetails() {
             >
               Delete template
             </Button>
+            {template.status === "DRAFT" && (
+              <Button onClick={publishTemplateAndShowFeedback}>Publish</Button>
+            )}
             {isOutOfSync && <p>You have unsaved changes...</p>}
 
             <StepInfoDrawer

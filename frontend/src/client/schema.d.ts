@@ -139,7 +139,15 @@ export interface paths {
                                 name: string;
                                 type: string;
                                 inputs?: unknown;
-                                visualizationMetadata?: unknown;
+                                visualizationMetadata: {
+                                    position: {
+                                        x: number;
+                                        y: number;
+                                    };
+                                    data: {
+                                        label: string;
+                                    };
+                                };
                             }[];
                             connections?: {
                                 id: string;
@@ -152,7 +160,15 @@ export interface paths {
                                 id: string;
                                 type: string;
                                 settings: unknown;
-                                visualizationMetadata: unknown;
+                                visualizationMetadata: {
+                                    position: {
+                                        x: number;
+                                        y: number;
+                                    };
+                                    data: {
+                                        label: string;
+                                    };
+                                };
                             }[];
                         };
                     };
@@ -188,7 +204,15 @@ export interface paths {
                             name: string;
                             type: string;
                             inputs?: unknown;
-                            visualizationMetadata?: unknown;
+                            visualizationMetadata: {
+                                position: {
+                                    x: number;
+                                    y: number;
+                                };
+                                data: {
+                                    label: string;
+                                };
+                            };
                         }[];
                         connections?: {
                             id: string;
@@ -201,7 +225,15 @@ export interface paths {
                             id: string;
                             type: string;
                             settings: unknown;
-                            visualizationMetadata: unknown;
+                            visualizationMetadata: {
+                                position: {
+                                    x: number;
+                                    y: number;
+                                };
+                                data: {
+                                    label: string;
+                                };
+                            };
                         }[];
                     };
                 };
@@ -271,6 +303,68 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workflow-template/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success: boolean;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/v1/plugin/": {

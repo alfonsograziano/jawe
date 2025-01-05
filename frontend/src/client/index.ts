@@ -71,4 +71,10 @@ export class Client {
       params: { path: { id: pluginId } },
     });
   }
+
+  publishTemplate(templateId: string) {
+    return client.PATCH("/api/v1/workflow-template/{id}/publish", {
+      params: { path: { id: templateId } },
+    });
+  }
 }

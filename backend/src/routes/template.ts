@@ -1,6 +1,12 @@
 import { FastifyInstance } from "fastify";
 import { Type } from "@sinclair/typebox";
 import { Static } from "@sinclair/typebox";
+import {
+  Step,
+  StepConnections,
+  Trigger,
+  validateVisualizationMetadata,
+} from "../../core/validateTemplate";
 
 const CreateWorkflowBody = Type.Object({
   name: Type.String(),
@@ -10,27 +16,6 @@ const TemplateStatus = Type.Union([
   Type.Literal("DRAFT"),
   Type.Literal("PUBLISHED"),
 ]);
-
-const Step = Type.Object({
-  id: Type.String(),
-  name: Type.String(),
-  type: Type.String(),
-  inputs: Type.Optional(Type.Any()),
-  visualizationMetadata: Type.Optional(Type.Any()),
-});
-
-const StepConnections = Type.Object({
-  id: Type.String(),
-  fromStepId: Type.String(),
-  toStepId: Type.String(),
-});
-
-const Trigger = Type.Object({
-  id: Type.String(),
-  type: Type.String(),
-  settings: Type.Any(),
-  visualizationMetadata: Type.Any(),
-});
 
 const UpdateWorkflowBody = Type.Object({
   name: Type.Optional(Type.String()),
@@ -83,6 +68,19 @@ const DeleteWorkflowResponse = Type.Object({
 });
 
 const DeleteWorkflowErrorResponse = Type.Object({
+  error: Type.String(),
+});
+
+const PublishWorkflowParams = Type.Object({
+  id: Type.String(),
+});
+
+const PublishWorkflowResponse = Type.Object({
+  success: Type.Boolean(),
+  message: Type.String(),
+});
+
+const PublishWorkflowErrorResponse = Type.Object({
   error: Type.String(),
 });
 
@@ -172,10 +170,20 @@ export default async function workflowTemplate(app: FastifyInstance) {
         name: workflow.name,
         status: workflow.status,
         entryPointId: workflow.entryPointId || undefined,
-        steps: workflow.steps,
+        steps: workflow.steps.map((step) => ({
+          ...step,
+          visualizationMetadata: validateVisualizationMetadata(
+            step.visualizationMetadata
+          ),
+        })),
         connections: workflow.connections,
         updatedAt: workflow.updatedAt.toISOString(),
-        triggers: workflow.triggers,
+        triggers: workflow.triggers.map((trigger) => ({
+          ...trigger,
+          visualizationMetadata: validateVisualizationMetadata(
+            trigger.visualizationMetadata
+          ),
+        })),
       };
 
       return reply.status(200).send(formattedWorkflow);
@@ -365,6 +373,63 @@ export default async function workflowTemplate(app: FastifyInstance) {
         app.log.error(error);
         return reply.status(500).send({
           error: "An error occurred while deleting the workflow template.",
+        });
+      }
+    }
+  );
+
+  app.patch<{
+    Params: Static<typeof PublishWorkflowParams>;
+    Reply: Static<
+      typeof PublishWorkflowResponse | typeof PublishWorkflowErrorResponse
+    >;
+  }>(
+    "/:id/publish",
+    {
+      schema: {
+        params: PublishWorkflowParams,
+        response: {
+          200: PublishWorkflowResponse,
+          404: PublishWorkflowErrorResponse,
+          400: PublishWorkflowErrorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      try {
+        // Fetch the workflow template with all related properties
+        const workflowTemplate = await app.prisma.workflowTemplate.findUnique({
+          where: { id },
+          include: {
+            steps: true,
+            connections: true,
+            triggers: true,
+            // Include other related properties as necessary
+          },
+        });
+
+        if (!workflowTemplate) {
+          return reply
+            .status(404)
+            .send({ error: "Workflow template not found." });
+        }
+
+        // Update the workflow template status to PUBLISHED
+        await app.prisma.workflowTemplate.update({
+          where: { id },
+          data: { status: "PUBLISHED" },
+        });
+
+        return reply.status(200).send({
+          success: true,
+          message: "Workflow template published successfully.",
+        });
+      } catch (error) {
+        app.log.error(error);
+        return reply.status(500).send({
+          error: "An error occurred while publishing the workflow template.",
         });
       }
     }
