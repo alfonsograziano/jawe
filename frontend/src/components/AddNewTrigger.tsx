@@ -3,6 +3,7 @@ import "@xyflow/react/dist/style.css";
 import { Client, TriggersInfoList } from "../client";
 import { Button } from "antd";
 import TriggerSelectorModal from "./TriggerSelectorModal";
+import { RocketOutlined } from "@ant-design/icons";
 
 export default function AddNewTrigger({
   onSelect,
@@ -32,8 +33,12 @@ export default function AddNewTrigger({
     <div>
       {availableTriggers && (
         <>
-          <Button onClick={handleOpenModal} type="primary">
-            Add new trigger
+          <Button
+            onClick={handleOpenModal}
+            type="primary"
+            icon={<RocketOutlined />}
+          >
+            Add trigger
           </Button>
           <TriggerSelectorModal
             isOpen={isTriggerSelectorModalVisible}

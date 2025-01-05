@@ -15,7 +15,7 @@ import { useParams } from "react-router";
 import "@xyflow/react/dist/style.css";
 import { WorkflowStep } from "../client";
 import AddNewPlugin from "../components/AddNewPlugin";
-import { Button, message, Typography } from "antd";
+import { Button, Card, message, Popover, Input } from "antd";
 import BackButton from "../components/Back";
 import { useNavigate } from "react-router-dom";
 import NodeWithToolbar from "../components/NodeWithToolbar";
@@ -24,8 +24,7 @@ import StepInfoDrawer from "../components/StepInfoDrawer";
 import AddNewTrigger from "../components/AddNewTrigger";
 import EntryPointWithToolbar from "../components/EntryPointNode";
 import TriggerWithToolbar from "../components/TriggerWithToolbar";
-
-const { Title } = Typography;
+import { DeleteOutlined, SaveOutlined } from "@ant-design/icons";
 
 const nodeTypes = {
   "node-with-toolbar": NodeWithToolbar,
@@ -60,6 +59,7 @@ export default function WorkflowTemplateDetails() {
     deleteTrigger,
     saveTemplate,
     publishTemplate,
+    editName,
   } = useTemplate(id);
 
   useEffect(() => {
@@ -143,31 +143,62 @@ export default function WorkflowTemplateDetails() {
       >
         <Panel>
           <div style={{ display: "flex", gap: 20 }}>
-            <BackButton />
-            <Title level={3} style={{ margin: 0 }}>
-              {template.name}
-            </Title>
-            <AddNewPlugin onSelect={addStep} />
-            <AddNewTrigger onSelect={addTrigger} />
-
-            <Button onClick={saveTemplateAndShowFeedback} type="primary">
-              Save
-            </Button>
-
-            <Button
-              color="danger"
-              variant="solid"
-              onClick={async () => {
-                await deleteTemplate();
-                navigate(-1);
-              }}
+            <Card
+              style={{ boxShadow: "0px 0px 10px #d3d3d3", margin: 4 }}
+              styles={{ body: { margin: 10, padding: 0 } }}
             >
-              Delete template
-            </Button>
-            {template.status === "DRAFT" && (
-              <Button onClick={publishTemplateAndShowFeedback}>Publish</Button>
-            )}
-            {isOutOfSync && <p>You have unsaved changes...</p>}
+              <div style={{ display: "flex", gap: 20 }}>
+                <BackButton />
+                <Input
+                  value={template.name}
+                  onChange={(event) => editName(event.target.value)}
+                />
+              </div>
+            </Card>
+
+            <div style={{ position: "fixed", right: "20px", top: "20px" }}>
+              {isOutOfSync && <p>You have unsaved changes...</p>}
+            </div>
+
+            <Card
+              style={{
+                position: "fixed",
+                bottom: "20px",
+                left: "60px",
+                boxShadow: "0px 0px 10px #d3d3d3",
+                margin: 4,
+              }}
+              styles={{ body: { margin: 10, padding: 0 } }}
+            >
+              <div style={{ display: "flex", gap: 20 }}>
+                <AddNewPlugin onSelect={addStep} />
+                <AddNewTrigger onSelect={addTrigger} />
+                <Button
+                  onClick={saveTemplateAndShowFeedback}
+                  type="primary"
+                  icon={<SaveOutlined />}
+                >
+                  Save
+                </Button>
+                <Popover content="Delete template">
+                  <Button
+                    color="danger"
+                    variant="solid"
+                    icon={<DeleteOutlined />}
+                    onClick={async () => {
+                      await deleteTemplate();
+                      navigate(-1);
+                    }}
+                  />
+                </Popover>
+
+                {template.status === "DRAFT" && (
+                  <Button onClick={publishTemplateAndShowFeedback}>
+                    Publish
+                  </Button>
+                )}
+              </div>
+            </Card>
 
             <StepInfoDrawer
               onClose={() => {

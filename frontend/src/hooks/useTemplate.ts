@@ -345,5 +345,9 @@ export const useTemplate = (templateId: string) => {
       if (!template) return;
       setTemplate(removeConnectionsFromTemplate(template, connections));
     },
+    editName: (name: string) => {
+      if (!template) return;
+      setTemplate({ ...template, name });
+    },
   };
 };

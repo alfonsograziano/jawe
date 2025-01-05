@@ -3,6 +3,7 @@ import "@xyflow/react/dist/style.css";
 import { Client, PluginsInfoList } from "../client";
 import { Button } from "antd";
 import PluginSelectorModal from "../components/PluginSelectorModal";
+import { AppstoreAddOutlined } from "@ant-design/icons";
 
 export default function AddNewPlugin({
   onSelect,
@@ -32,8 +33,12 @@ export default function AddNewPlugin({
     <div>
       {availablePlugins && (
         <>
-          <Button onClick={handleOpenModal} type="primary">
-            Add new step
+          <Button
+            onClick={handleOpenModal}
+            type="primary"
+            icon={<AppstoreAddOutlined />}
+          >
+            Add step
           </Button>
           <PluginSelectorModal
             isOpen={isPluginSelectorModalVisible}
