@@ -134,7 +134,7 @@ export interface paths {
                             name: string;
                             status: "DRAFT" | "PUBLISHED";
                             entryPointId?: string;
-                            steps?: {
+                            steps: {
                                 id: string;
                                 name: string;
                                 type: string;
@@ -159,7 +159,7 @@ export interface paths {
                             triggers: {
                                 id: string;
                                 type: string;
-                                settings: unknown;
+                                inputs: unknown;
                                 visualizationMetadata: {
                                     position: {
                                         x: number;
@@ -224,7 +224,7 @@ export interface paths {
                         triggers: {
                             id: string;
                             type: string;
-                            settings: unknown;
+                            inputs: unknown;
                             visualizationMetadata: {
                                 position: {
                                     x: number;
@@ -595,7 +595,7 @@ export interface paths {
                             id: string;
                             name: string;
                             description: string;
-                            input: unknown;
+                            inputs: unknown;
                         };
                     };
                 };

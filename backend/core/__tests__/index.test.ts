@@ -204,7 +204,7 @@ describe("validateTriggers", () => {
         {
           id: "trigger1",
           type: "http",
-          settings: {},
+          inputs: {},
           visualizationMetadata: {
             position: { x: "invalid", y: 0 }, // Invalid x coordinate
             data: { label: "Trigger 1" },
@@ -224,7 +224,7 @@ describe("validateTriggers", () => {
         {
           id: "trigger1",
           type: "http",
-          settings: {},
+          inputs: {},
           visualizationMetadata: {
             position: { x: 0, y: 0 },
             data: { label: "Trigger 1" },

@@ -10,20 +10,26 @@ const { Panel } = Collapse;
 type StepInfoDrawerProps = {
   onClose: () => void;
   open: boolean;
-  stepInfo?: StepInfo;
+  stepInfo: StepInfo;
+  onSaveValues: (values: any) => void;
 };
 
 type StepInfo = {
   id: string;
   type: string;
+  inputs?: any;
 };
 
-const StepInfoDrawer = ({ onClose, open, stepInfo }: StepInfoDrawerProps) => {
+const StepInfoDrawer = ({
+  onClose,
+  open,
+  stepInfo,
+  onSaveValues,
+}: StepInfoDrawerProps) => {
   const [pluginData, setPluginData] = useState<PluginDetails | undefined>();
   const [loadingPluginData, setLoadingPluginData] = useState(false);
 
   useEffect(() => {
-    if (!stepInfo) return;
     setLoadingPluginData(true);
 
     new Client().getPluginById(stepInfo.type).then(({ data }) => {
@@ -32,24 +38,23 @@ const StepInfoDrawer = ({ onClose, open, stepInfo }: StepInfoDrawerProps) => {
     });
   }, [stepInfo]);
 
-  if (!stepInfo) return <></>;
+  if (!stepInfo || !pluginData) return <></>;
 
   return (
     <Drawer
-      title={pluginData?.name || "Loading"}
+      title={pluginData.name || "Loading"}
       onClose={onClose}
       open={open}
       size="large"
       loading={loadingPluginData}
       mask={false}
     >
-      <Paragraph>{pluginData?.description}</Paragraph>
+      <Paragraph>{pluginData.description}</Paragraph>
       <Title level={3}>Configuration</Title>
       <DynamicJSONForm
-        schema={pluginData?.inputs}
-        onFinish={(values) => {
-          console.log(values);
-        }}
+        schema={pluginData.inputs}
+        onFinish={onSaveValues}
+        defaultData={stepInfo.inputs}
       />
       <Collapse>
         <Panel header="Show plugin details" key="1">

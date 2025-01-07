@@ -11,17 +11,20 @@ type TriggerInfoDrawerProps = {
   onClose: () => void;
   open: boolean;
   triggerInfo?: TriggerInfo;
+  onSaveValues: (values: any) => void;
 };
 
 type TriggerInfo = {
   id: string;
   type: string;
+  inputs: string;
 };
 
 const TriggerInfoDrawer = ({
   onClose,
   open,
   triggerInfo,
+  onSaveValues,
 }: TriggerInfoDrawerProps) => {
   const [triggerData, setTriggerData] = useState<TriggerDetails | undefined>();
   const [loadingTriggerData, setLoadingTriggerData] = useState(false);
@@ -36,26 +39,25 @@ const TriggerInfoDrawer = ({
     });
   }, [triggerInfo]);
 
-  if (!triggerInfo) return <></>;
+  if (!triggerInfo || !triggerData) return <></>;
 
   return (
     <Drawer
-      title={triggerData?.name || "Loading"}
+      title={triggerData.name || "Loading"}
       onClose={onClose}
       open={open}
       size="large"
       mask={false}
       loading={loadingTriggerData}
     >
-      <Paragraph>{triggerData?.description}</Paragraph>
+      <Paragraph>{triggerData.description}</Paragraph>
 
       <Title level={3}>Trigger configuration</Title>
 
       <DynamicJSONForm
-        schema={triggerData?.input}
-        onFinish={(values) => {
-          console.log(values);
-        }}
+        schema={triggerData.inputs}
+        onFinish={onSaveValues}
+        defaultData={triggerInfo.inputs}
       />
 
       <Collapse>

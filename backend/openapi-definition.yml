@@ -164,7 +164,7 @@ paths:
                           type: string
                         type:
                           type: string
-                        settings: {}
+                        inputs: {}
                         visualizationMetadata:
                           type: object
                           properties:
@@ -191,12 +191,13 @@ paths:
                       required:
                         - id
                         - type
-                        - settings
+                        - inputs
                         - visualizationMetadata
                 required:
                   - id
                   - name
                   - status
+                  - steps
                   - updatedAt
                   - triggers
         "404":
@@ -293,7 +294,7 @@ paths:
                         type: string
                       type:
                         type: string
-                      settings: {}
+                      inputs: {}
                       visualizationMetadata:
                         type: object
                         properties:
@@ -320,7 +321,7 @@ paths:
                     required:
                       - id
                       - type
-                      - settings
+                      - inputs
                       - visualizationMetadata
               required:
                 - triggers
@@ -594,12 +595,12 @@ paths:
                     type: string
                   description:
                     type: string
-                  input: {}
+                  inputs: {}
                 required:
                   - id
                   - name
                   - description
-                  - input
+                  - inputs
         "404":
           description: Default Response
           content:

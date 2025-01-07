@@ -229,7 +229,7 @@ export const addTriggerToTemplate = (
   const newTrigger = {
     id: triggerPrefix + trigger.id + crypto.randomUUID(),
     type: trigger.id,
-    settings: {},
+    inputs: {},
     visualizationMetadata: {
       position: { x: 500, y: 500 },
       data: { label: trigger.name },
@@ -283,6 +283,25 @@ const setTriggerInputsInTemplate = (
   );
 
   if (!trigger) return newTemplate;
+
+  trigger.inputs = inputs;
+
+  return newTemplate;
+};
+
+const setStepInputsInTemplate = (
+  template: WorkflowTemplate,
+  stepId: string,
+  inputs: any
+) => {
+  // Create a deep copy of the template
+  const newTemplate = structuredClone(template);
+
+  const trigger = newTemplate.steps.find((step) => step.id === stepId);
+
+  if (!trigger) return newTemplate;
+
+  trigger.inputs = inputs;
 
   return newTemplate;
 };

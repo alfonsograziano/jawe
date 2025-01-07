@@ -3,12 +3,17 @@ import { Form, Input, Button, Select, Checkbox, InputNumber } from "antd";
 type DynamicJSONFormProps = {
   schema: any;
   onFinish: (values: any) => void;
+  defaultData: any;
 };
 
-const DynamicJSONForm = ({ schema, onFinish }: DynamicJSONFormProps) => {
+const DynamicJSONForm = ({
+  schema,
+  onFinish,
+  defaultData,
+}: DynamicJSONFormProps) => {
   const [form] = Form.useForm();
 
-  if (!schema) return;
+  if (!schema) return null;
 
   const renderField = (key: string, config: any) => {
     const { description, type, anyOf, pattern, format } = config;
@@ -89,7 +94,12 @@ const DynamicJSONForm = ({ schema, onFinish }: DynamicJSONFormProps) => {
   };
 
   return (
-    <Form form={form} layout="vertical" onFinish={onFinish}>
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={onFinish}
+      initialValues={defaultData}
+    >
       {Object.entries(schema.properties).map(([key, config]) =>
         renderField(key, config)
       )}

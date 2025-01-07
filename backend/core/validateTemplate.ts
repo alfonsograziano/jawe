@@ -20,7 +20,7 @@ export const StepConnections = Type.Object({
 export const Trigger = Type.Object({
   id: Type.String(),
   type: Type.String(),
-  settings: Type.Any(),
+  inputs: Type.Any(),
   visualizationMetadata: VisualizationMetadata,
 });
 

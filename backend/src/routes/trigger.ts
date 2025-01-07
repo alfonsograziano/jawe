@@ -19,7 +19,7 @@ const GetTriggerResponse = Type.Object({
   id: Type.String(),
   name: Type.String(),
   description: Type.String(),
-  input: Type.Any(),
+  inputs: Type.Any(),
 });
 
 const GetTriggerErrorResponse = Type.Object({

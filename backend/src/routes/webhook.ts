@@ -8,13 +8,13 @@ type ErrorResponse = {
   error: string;
 };
 
-type TriggerSettings = {
+type TriggerInputs = {
   authorization?: string;
   redirectUrl?: string;
 };
 
 type Trigger = {
-  settings?: TriggerSettings;
+  inputs?: TriggerInputs;
   workflowTemplateId: string;
 };
 
@@ -32,13 +32,13 @@ export default async function webhook(app: FastifyInstance) {
             AND: [
               { type: "webhook" },
               {
-                settings: {
+                inputs: {
                   path: ["url"],
                   equals: triggerUrl,
                 },
               },
               {
-                settings: {
+                inputs: {
                   path: ["method"],
                   equals: method,
                 },
@@ -53,7 +53,7 @@ export default async function webhook(app: FastifyInstance) {
         }
 
         // Authorization check
-        const expectedAuthorization = trigger.settings?.authorization;
+        const expectedAuthorization = trigger.inputs?.authorization;
         if (expectedAuthorization) {
           const authorizationToken = request.headers.authorization;
           if (
@@ -76,7 +76,7 @@ export default async function webhook(app: FastifyInstance) {
         const response: WorkflowRunResponse = { workflowRunId: workflowRun.id };
 
         // Handle optional redirect
-        const redirectUrl = trigger.settings?.redirectUrl;
+        const redirectUrl = trigger.inputs?.redirectUrl;
         if (redirectUrl) {
           reply.redirect(redirectUrl);
         } else {

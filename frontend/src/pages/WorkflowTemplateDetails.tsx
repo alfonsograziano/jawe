@@ -58,6 +58,7 @@ export default function WorkflowTemplateDetails() {
     | {
         id: string;
         type: string;
+        inputs: any;
       }
     | undefined
   >();
@@ -80,6 +81,7 @@ export default function WorkflowTemplateDetails() {
     history,
     duplicateTemplate,
     canEditTemplate,
+    setTriggerInputs,
   } = useTemplate(id);
 
   useEffect(() => {
@@ -279,13 +281,18 @@ export default function WorkflowTemplateDetails() {
               </div>
             </Card>
 
-            <StepInfoDrawer
-              onClose={() => {
-                setDrawerStepInfo(undefined);
-              }}
-              open={typeof drawerStepInfo !== "undefined"}
-              stepInfo={drawerStepInfo}
-            />
+            {drawerStepInfo && (
+              <StepInfoDrawer
+                onClose={() => {
+                  setDrawerStepInfo(undefined);
+                }}
+                open={typeof drawerStepInfo !== "undefined"}
+                stepInfo={drawerStepInfo}
+                onSaveValues={(values) => {
+                  console.log(values);
+                }}
+              />
+            )}
 
             <TriggerInfoDrawer
               onClose={() => {
@@ -293,6 +300,10 @@ export default function WorkflowTemplateDetails() {
               }}
               open={typeof drawerTrigerInfo !== "undefined"}
               triggerInfo={drawerTrigerInfo}
+              onSaveValues={(values) => {
+                if (!drawerTrigerInfo) return;
+                setTriggerInputs(drawerTrigerInfo.id, values);
+              }}
             />
           </div>
         </Panel>

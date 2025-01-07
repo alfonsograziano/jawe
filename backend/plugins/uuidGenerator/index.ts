@@ -1,4 +1,4 @@
-import { BasePlugin } from "../../basePlugin";
+import { BasePlugin } from "../../core/basePlugin";
 import { WorkflowContext } from "../../workflowContext";
 import { Type, Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";

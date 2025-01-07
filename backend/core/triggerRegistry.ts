@@ -33,6 +33,6 @@ export const triggerRegistry = [
     name: "Webhook",
     description:
       "Do an HTTP call on a specific endpoint to trigger a workflow execution",
-    input: HttpTriggerSchema,
+    inputs: HttpTriggerSchema,
   },
 ];

@@ -78,7 +78,7 @@ model Trigger {
   workflowTemplate      WorkflowTemplate @relation(fields: [workflowTemplateId], references: [id], onDelete: Cascade)
   workflowTemplateId    String
   type                  String
-  settings              Json
+  inputs                Json
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
   visualizationMetadata Json
