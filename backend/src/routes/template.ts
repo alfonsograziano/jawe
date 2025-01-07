@@ -9,6 +9,22 @@ import {
   validateTemplate,
   validateVisualizationMetadata,
 } from "../../core/validateTemplate";
+import crypto from "crypto";
+
+const DuplicateTemplateParams = Type.Object({
+  id: Type.String(),
+});
+
+const DuplicateTemplateResponse = Type.Object({
+  id: Type.String(),
+  name: Type.String(),
+  status: Type.String(),
+  message: Type.String(),
+});
+
+const DuplicateTemplateErrorResponse = Type.Object({
+  error: Type.String(),
+});
 
 const CreateWorkflowBody = Type.Object({
   name: Type.String(),
@@ -236,6 +252,11 @@ export default async function workflowTemplate(app: FastifyInstance) {
           return reply.status(404).send({ error: "Workflow not found." });
         }
 
+        if (existingWorkflow.status === "PUBLISHED")
+          return reply
+            .status(500)
+            .send({ error: "Cannot edit a published template." });
+
         // Determine steps, connections, and triggers to delete
         const stepIdsToDelete = existingWorkflow.steps
           .filter(
@@ -458,6 +479,133 @@ export default async function workflowTemplate(app: FastifyInstance) {
         app.log.error(error);
         return reply.status(500).send({
           error: "An error occurred while publishing the workflow template.",
+        });
+      }
+    }
+  );
+
+  app.post<{
+    Params: Static<typeof DuplicateTemplateParams>;
+    Reply: Static<
+      typeof DuplicateTemplateResponse | typeof DuplicateTemplateErrorResponse
+    >;
+  }>(
+    "/:id/duplicate",
+    {
+      schema: {
+        params: DuplicateTemplateParams,
+        response: {
+          200: DuplicateTemplateResponse,
+          404: DuplicateTemplateErrorResponse,
+          500: DuplicateTemplateErrorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      try {
+        // Fetch the original template
+        const originalTemplate = await app.prisma.workflowTemplate.findUnique({
+          where: { id },
+          include: {
+            steps: true,
+            connections: true,
+            triggers: true,
+          },
+        });
+
+        if (!originalTemplate) {
+          return reply.status(404).send({ error: "Template not found." });
+        }
+
+        // Generate new name with random suffix
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        const newName = `${originalTemplate.name} - Copy ${randomSuffix}`;
+
+        // Map of old step IDs to new step IDs for entry point and connections
+        const stepIdMap = new Map();
+
+        // Create the duplicated template
+        const duplicatedTemplate = await app.prisma.workflowTemplate.create({
+          data: {
+            name: newName,
+            status:
+              originalTemplate.status === "PUBLISHED"
+                ? "DRAFT"
+                : originalTemplate.status,
+          },
+        });
+
+        // Duplicate steps
+        for (const step of originalTemplate.steps) {
+          const newStepId = crypto.randomUUID();
+          stepIdMap.set(step.id, newStepId);
+          await app.prisma.step.create({
+            data: {
+              id: newStepId,
+              workflowTemplateId: duplicatedTemplate.id,
+              name: step.name,
+              type: step.type,
+              inputs: step.inputs ?? {},
+              visualizationMetadata: step.visualizationMetadata ?? {},
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          });
+        }
+
+        // Duplicate connections
+        for (const connection of originalTemplate.connections) {
+          await app.prisma.connection.create({
+            data: {
+              id: crypto.randomUUID(),
+              workflowTemplateId: duplicatedTemplate.id,
+              fromStepId:
+                stepIdMap.get(connection.fromStepId) ?? connection.fromStepId,
+              toStepId:
+                stepIdMap.get(connection.toStepId) ?? connection.toStepId,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          });
+        }
+
+        // Duplicate triggers
+        for (const trigger of originalTemplate.triggers) {
+          await app.prisma.trigger.create({
+            data: {
+              id: `trigger-${crypto.randomUUID()}`,
+              workflowTemplateId: duplicatedTemplate.id,
+              type: trigger.type,
+              settings: trigger.settings ?? {},
+              visualizationMetadata: trigger.visualizationMetadata ?? {},
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          });
+        }
+
+        // Update entryPointId in duplicated template
+        if (originalTemplate.entryPointId) {
+          await app.prisma.workflowTemplate.update({
+            where: { id: duplicatedTemplate.id },
+            data: {
+              entryPointId: stepIdMap.get(originalTemplate.entryPointId),
+            },
+          });
+        }
+
+        return reply.status(200).send({
+          id: duplicatedTemplate.id,
+          name: duplicatedTemplate.name,
+          status: duplicatedTemplate.status,
+          message: "Template duplicated successfully.",
+        });
+      } catch (error) {
+        console.log(error);
+        return reply.status(500).send({
+          error: "An error occurred while duplicating the template.",
         });
       }
     }

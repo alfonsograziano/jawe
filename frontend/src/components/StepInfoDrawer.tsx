@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import { Client, PluginDetails } from "../client";
 import Paragraph from "antd/es/typography/Paragraph";
 import Title from "antd/es/typography/Title";
+import { Collapse } from "antd";
+import DynamicJSONForm from "./DynamicJSONForm";
 
+const { Panel } = Collapse;
 type StepInfoDrawerProps = {
   onClose: () => void;
   open: boolean;
@@ -23,7 +26,7 @@ const StepInfoDrawer = ({ onClose, open, stepInfo }: StepInfoDrawerProps) => {
     if (!stepInfo) return;
     setLoadingPluginData(true);
 
-    new Client().getPluginById(stepInfo.type).then(({ data, error }) => {
+    new Client().getPluginById(stepInfo.type).then(({ data }) => {
       setPluginData(data);
       setLoadingPluginData(false);
     });
@@ -38,12 +41,27 @@ const StepInfoDrawer = ({ onClose, open, stepInfo }: StepInfoDrawerProps) => {
       open={open}
       size="large"
       loading={loadingPluginData}
+      mask={false}
     >
       <Paragraph>{pluginData?.description}</Paragraph>
-
       <Title level={3}>Configuration</Title>
-
-      <pre>{JSON.stringify(pluginData, null, 2)}</pre>
+      <DynamicJSONForm
+        schema={pluginData?.inputs}
+        onFinish={(values) => {
+          console.log(values);
+        }}
+      />
+      <Collapse>
+        <Panel header="Show plugin details" key="1">
+          <pre
+            style={{
+              overflow: "scroll",
+            }}
+          >
+            {JSON.stringify(pluginData, null, 2)}
+          </pre>
+        </Panel>
+      </Collapse>
     </Drawer>
   );
 };

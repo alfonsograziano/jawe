@@ -24,7 +24,16 @@ import StepInfoDrawer from "../components/StepInfoDrawer";
 import AddNewTrigger from "../components/AddNewTrigger";
 import EntryPointWithToolbar from "../components/EntryPointNode";
 import TriggerWithToolbar from "../components/TriggerWithToolbar";
-import { DeleteOutlined, SaveOutlined } from "@ant-design/icons";
+import {
+  SaveOutlined,
+  UndoOutlined,
+  RedoOutlined,
+  UnorderedListOutlined,
+} from "@ant-design/icons";
+import DeleteTemplate from "../components/DeleteTemplate";
+import PublishTemplateButton from "../components/PublishTemplateButton";
+import DuplicateButtonAndFeedback from "../components/DuplicateButtonAndFeedback";
+import TriggerInfoDrawer from "../components/TriggerInfoDrawer";
 
 const nodeTypes = {
   "node-with-toolbar": NodeWithToolbar,
@@ -45,6 +54,14 @@ export default function WorkflowTemplateDetails() {
     WorkflowStep | undefined
   >();
 
+  const [drawerTrigerInfo, setDrawerTriggerInfo] = useState<
+    | {
+        id: string;
+        type: string;
+      }
+    | undefined
+  >();
+
   const {
     template,
     deleteStep,
@@ -60,6 +77,9 @@ export default function WorkflowTemplateDetails() {
     saveTemplate,
     publishTemplate,
     editName,
+    history,
+    duplicateTemplate,
+    canEditTemplate,
   } = useTemplate(id);
 
   useEffect(() => {
@@ -79,9 +99,17 @@ export default function WorkflowTemplateDetails() {
           }
         },
         onOpenDetails: async () => {
-          setDrawerStepInfo(
-            template?.steps?.find((step) => step.id === node.id)
-          );
+          if (node.type === "trigger-with-toolbar") {
+            setDrawerTriggerInfo(
+              template?.triggers?.find((triggers) => triggers.id === node.id)
+            );
+          }
+
+          if (node.type === "node-with-toolbar" || "entry-point-with-toolbar") {
+            setDrawerStepInfo(
+              template?.steps?.find((step) => step.id === node.id)
+            );
+          }
         },
       },
     }));
@@ -113,6 +141,15 @@ export default function WorkflowTemplateDetails() {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        defaultEdgeOptions={{
+          type: "floating",
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: "#000",
+          },
+        }}
+        nodesDraggable={canEditTemplate}
+        nodesConnectable={canEditTemplate}
         onNodesChange={(changes) => {
           const change = changes[0] as {
             dragging: boolean;
@@ -128,18 +165,18 @@ export default function WorkflowTemplateDetails() {
           }
           onNodesChange(changes);
         }}
-        onEdgesChange={onEdgesChange}
-        onConnect={(params: Connection) => addConnection(params)}
-        defaultEdgeOptions={{
-          type: "floating",
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: "#000",
-          },
+        onEdgesChange={(changes) => {
+          if (!canEditTemplate) return;
+          onEdgesChange(changes);
         }}
-        onEdgesDelete={(edges: { id: string }[]) =>
-          removeConnections(edges.map((edge) => edge.id))
-        }
+        onConnect={(params: Connection) => {
+          if (!canEditTemplate) return;
+          addConnection(params);
+        }}
+        onEdgesDelete={(edges: { id: string }[]) => {
+          if (!canEditTemplate) return;
+          removeConnections(edges.map((edge) => edge.id));
+        }}
       >
         <Panel>
           <div style={{ display: "flex", gap: 20 }}>
@@ -147,18 +184,27 @@ export default function WorkflowTemplateDetails() {
               style={{ boxShadow: "0px 0px 10px #d3d3d3", margin: 4 }}
               styles={{ body: { margin: 10, padding: 0 } }}
             >
-              <div style={{ display: "flex", gap: 20 }}>
+              <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
                 <BackButton />
                 <Input
                   value={template.name}
                   onChange={(event) => editName(event.target.value)}
+                  disabled={!canEditTemplate}
                 />
+
+                {template.status === "DRAFT" && (
+                  <PublishTemplateButton
+                    onConfirmPublish={publishTemplateAndShowFeedback}
+                  />
+                )}
+
+                {template.status === "PUBLISHED" && (
+                  <Button icon={<UnorderedListOutlined />}>
+                    View executions
+                  </Button>
+                )}
               </div>
             </Card>
-
-            <div style={{ position: "fixed", right: "20px", top: "20px" }}>
-              {isOutOfSync && <p>You have unsaved changes...</p>}
-            </div>
 
             <Card
               style={{
@@ -171,32 +217,65 @@ export default function WorkflowTemplateDetails() {
               styles={{ body: { margin: 10, padding: 0 } }}
             >
               <div style={{ display: "flex", gap: 20 }}>
-                <AddNewPlugin onSelect={addStep} />
-                <AddNewTrigger onSelect={addTrigger} />
-                <Button
-                  onClick={saveTemplateAndShowFeedback}
-                  type="primary"
-                  icon={<SaveOutlined />}
-                >
-                  Save
-                </Button>
-                <Popover content="Delete template">
-                  <Button
-                    color="danger"
-                    variant="solid"
-                    icon={<DeleteOutlined />}
-                    onClick={async () => {
-                      await deleteTemplate();
-                      navigate(-1);
-                    }}
-                  />
-                </Popover>
+                <AddNewTrigger
+                  onSelect={addTrigger}
+                  disabled={!canEditTemplate}
+                />
+                <AddNewPlugin onSelect={addStep} disabled={!canEditTemplate} />
 
-                {template.status === "DRAFT" && (
-                  <Button onClick={publishTemplateAndShowFeedback}>
-                    Publish
+                {isOutOfSync ? (
+                  <Popover content="You have unsaved changes">
+                    <Button
+                      onClick={saveTemplateAndShowFeedback}
+                      type="primary"
+                      icon={<SaveOutlined />}
+                      disabled={!canEditTemplate}
+                    >
+                      Save
+                    </Button>
+                  </Popover>
+                ) : (
+                  <Button
+                    onClick={saveTemplateAndShowFeedback}
+                    type="default"
+                    icon={<SaveOutlined />}
+                    disabled={!canEditTemplate}
+                  >
+                    Save
                   </Button>
                 )}
+
+                <div style={{ display: "flex", gap: 3 }}>
+                  <Button
+                    icon={<UndoOutlined />}
+                    onClick={history.undo}
+                    disabled={!history.canUndo || !canEditTemplate}
+                  />
+
+                  <Button
+                    icon={<RedoOutlined />}
+                    onClick={history.redo}
+                    disabled={!history.canRedo || !canEditTemplate}
+                  />
+                </div>
+
+                <DeleteTemplate
+                  onConfirmDelete={async () => {
+                    await deleteTemplate();
+                    navigate(-1);
+                  }}
+                />
+
+                <DuplicateButtonAndFeedback
+                  duplicateTemplate={async () => {
+                    //TODO: Refator this..
+                    const result = await duplicateTemplate();
+                    if (!result) return { id: undefined };
+                    const { data } = result;
+                    if (!data) return { id: undefined };
+                    return { id: data.id };
+                  }}
+                />
               </div>
             </Card>
 
@@ -206,6 +285,14 @@ export default function WorkflowTemplateDetails() {
               }}
               open={typeof drawerStepInfo !== "undefined"}
               stepInfo={drawerStepInfo}
+            />
+
+            <TriggerInfoDrawer
+              onClose={() => {
+                setDrawerTriggerInfo(undefined);
+              }}
+              open={typeof drawerTrigerInfo !== "undefined"}
+              triggerInfo={drawerTrigerInfo}
             />
           </div>
         </Panel>

@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-export function useUndoRedo(initialValue: any) {
-  const [history, setHistory] = useState([initialValue]);
+export function useUndoRedo<T>() {
+  const [history, setHistory] = useState<T[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const set = (newValue: any) => {
+  const set = (newValue: T) => {
     const updatedHistory = [...history.slice(0, currentIndex + 1), newValue];
     setHistory(updatedHistory);
     setCurrentIndex(updatedHistory.length - 1);
@@ -23,7 +23,7 @@ export function useUndoRedo(initialValue: any) {
   };
 
   return {
-    value: history[currentIndex],
+    value: history[currentIndex] || null,
     set,
     undo,
     redo,

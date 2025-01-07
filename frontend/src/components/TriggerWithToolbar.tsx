@@ -1,6 +1,10 @@
 import { Position, NodeToolbar, Handle } from "@xyflow/react";
 import { Button } from "antd";
-import { DeleteOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  InfoCircleOutlined,
+  ThunderboltFilled,
+} from "@ant-design/icons";
 
 export default function TriggerWithToolbar({
   data,
@@ -31,9 +35,12 @@ export default function TriggerWithToolbar({
         </div>
       </NodeToolbar>
 
+      <div>
+        <ThunderboltFilled style={{ fontSize: "16px", color: "#08c" }} />
+        <div>{data.label}</div>
+      </div>
+
       <Handle type="source" position={Position.Bottom} isConnectable={true} />
-      <h1>Trigger</h1>
-      <div>{data.label}</div>
     </>
   );
 }

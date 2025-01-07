@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Client, WorkflowTemplate } from "../client";
 import { Connection, Position } from "@xyflow/react";
+import { useUndoRedo } from "./useUndoRedo";
+
+const triggerPrefix = "trigger-";
 
 export const deleteStepInTemplate = (
   template: WorkflowTemplate,
@@ -28,6 +31,13 @@ export const addConnection = (
   connection: Connection
 ) => {
   const newTemplate = structuredClone(template);
+  console.log(connection);
+
+  // We're trying to connect a step to a trigger
+  if (connection.source.startsWith(triggerPrefix)) {
+    newTemplate.entryPointId = connection.target;
+    return newTemplate;
+  }
 
   const newConnection = {
     id: crypto.randomUUID(),
@@ -217,8 +227,8 @@ export const addTriggerToTemplate = (
   const newTemplate = structuredClone(template);
 
   const newTrigger = {
-    id: trigger.id,
-    type: trigger.name,
+    id: triggerPrefix + trigger.id + crypto.randomUUID(),
+    type: trigger.id,
     settings: {},
     visualizationMetadata: {
       position: { x: 500, y: 500 },
@@ -260,18 +270,42 @@ export const removeConnectionsFromTemplate = (
   return newTemplate;
 };
 
+const setTriggerInputsInTemplate = (
+  template: WorkflowTemplate,
+  triggerId: string,
+  inputs: any
+) => {
+  // Create a deep copy of the template
+  const newTemplate = structuredClone(template);
+
+  const trigger = newTemplate.triggers.find(
+    (trigger) => trigger.id === triggerId
+  );
+
+  if (!trigger) return newTemplate;
+
+  return newTemplate;
+};
+
 export const useTemplate = (templateId: string) => {
   const [savedTemplate, setSavedTemplate] = useState<
     WorkflowTemplate | undefined
   >();
 
-  const [template, setTemplate] = useState<WorkflowTemplate | undefined>();
+  const {
+    value: template,
+    set: setTemplateWithHistory,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useUndoRedo<WorkflowTemplate | undefined>();
 
   const fetchTemplate = async () => {
     const client = new Client();
     const { data } = await client.loadTemplateDetails(templateId);
 
-    setTemplate(data);
+    setTemplateWithHistory(data);
     setSavedTemplate(data);
   };
 
@@ -294,7 +328,7 @@ export const useTemplate = (templateId: string) => {
 
   return {
     template,
-    setTemplate,
+    setTemplate: setTemplateWithHistory,
     saveTemplate: async (refetch = true) => {
       if (!template) return;
       const client = new Client();
@@ -307,19 +341,19 @@ export const useTemplate = (templateId: string) => {
     },
     deleteStep: (stepId: string) => {
       if (!template) return;
-      setTemplate(deleteStepInTemplate(template, stepId));
+      setTemplateWithHistory(deleteStepInTemplate(template, stepId));
     },
     updateStepPosition: (step: StepPosition) => {
       if (!template) return;
-      setTemplate(updateStepPositionInTemplate(template, step));
+      setTemplateWithHistory(updateStepPositionInTemplate(template, step));
     },
     addConnection: (connection: Connection) => {
       if (!template) return;
-      setTemplate(addConnection(template, connection));
+      setTemplateWithHistory(addConnection(template, connection));
     },
     addStep: (step: PluginBasicInfo) => {
       if (!template) return;
-      setTemplate(addNewStepToTemplate(template, step));
+      setTemplateWithHistory(addNewStepToTemplate(template, step));
     },
     isOutOfSync,
     graphInfo,
@@ -329,11 +363,11 @@ export const useTemplate = (templateId: string) => {
     },
     addTrigger: (trigger: { id: string; name: string }) => {
       if (!template) return;
-      setTemplate(addTriggerToTemplate(template, trigger));
+      setTemplateWithHistory(addTriggerToTemplate(template, trigger));
     },
     deleteTrigger: (triggerId: string) => {
       if (!template) return;
-      setTemplate(deleteTriggerFromTemplate(template, triggerId));
+      setTemplateWithHistory(deleteTriggerFromTemplate(template, triggerId));
     },
     publishTemplate: async () => {
       if (!template) return;
@@ -343,11 +377,31 @@ export const useTemplate = (templateId: string) => {
     },
     removeConnections: (connections: string[]) => {
       if (!template) return;
-      setTemplate(removeConnectionsFromTemplate(template, connections));
+      setTemplateWithHistory(
+        removeConnectionsFromTemplate(template, connections)
+      );
     },
     editName: (name: string) => {
       if (!template) return;
-      setTemplate({ ...template, name });
+      setTemplateWithHistory({ ...template, name });
+    },
+    history: {
+      undo,
+      redo,
+      canUndo,
+      canRedo,
+    },
+    duplicateTemplate: async () => {
+      if (!template) return;
+      const { data, error } = await new Client().duplicateTemplate(template.id);
+      return { data, error };
+    },
+    canEditTemplate: template?.status ? template.status === "DRAFT" : false,
+    setTriggerInputs: (triggerId: string, inputs: any) => {
+      if (!template) return;
+      setTemplateWithHistory(
+        setTriggerInputsInTemplate(template, triggerId, inputs)
+      );
     },
   };
 };

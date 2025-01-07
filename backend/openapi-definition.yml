@@ -432,6 +432,57 @@ paths:
                     type: string
                 required:
                   - error
+  /api/v1/workflow-template/{id}/duplicate:
+    post:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  status:
+                    type: string
+                  message:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - status
+                  - message
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
+        "500":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
   /api/v1/plugin/:
     get:
       responses:
@@ -543,10 +594,12 @@ paths:
                     type: string
                   description:
                     type: string
+                  input: {}
                 required:
                   - id
                   - name
                   - description
+                  - input
         "404":
           description: Default Response
           content:
@@ -558,4 +611,16 @@ paths:
                     type: string
                 required:
                   - error
+  /api/v1/webhook/{*}:
+    get: &a1
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: "*"
+          required: true
+      responses:
+        "200":
+          description: Default Response
+    post: *a1
 tags: []

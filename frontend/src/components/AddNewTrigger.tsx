@@ -3,12 +3,14 @@ import "@xyflow/react/dist/style.css";
 import { Client, TriggersInfoList } from "../client";
 import { Button } from "antd";
 import TriggerSelectorModal from "./TriggerSelectorModal";
-import { RocketOutlined } from "@ant-design/icons";
+import { ThunderboltFilled } from "@ant-design/icons";
 
 export default function AddNewTrigger({
   onSelect,
+  disabled,
 }: {
   onSelect: (trigger: { id: string; name: string }) => void;
+  disabled: boolean;
 }) {
   const [availableTriggers, setAvailableTriggers] = useState<
     TriggersInfoList | undefined
@@ -35,8 +37,10 @@ export default function AddNewTrigger({
         <>
           <Button
             onClick={handleOpenModal}
-            type="primary"
-            icon={<RocketOutlined />}
+            icon={
+              <ThunderboltFilled style={{ fontSize: "16px", color: "#08c" }} />
+            }
+            disabled={disabled}
           >
             Add trigger
           </Button>

@@ -7,8 +7,10 @@ import { AppstoreAddOutlined } from "@ant-design/icons";
 
 export default function AddNewPlugin({
   onSelect,
+  disabled,
 }: {
   onSelect: (plugin: { id: string; name: string }) => void;
+  disabled: boolean;
 }) {
   const [availablePlugins, setAvailablePlugins] = useState<
     PluginsInfoList | undefined
@@ -35,8 +37,8 @@ export default function AddNewPlugin({
         <>
           <Button
             onClick={handleOpenModal}
-            type="primary"
             icon={<AppstoreAddOutlined />}
+            disabled={disabled}
           >
             Add step
           </Button>

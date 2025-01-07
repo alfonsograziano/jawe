@@ -77,4 +77,16 @@ export class Client {
       params: { path: { id: templateId } },
     });
   }
+
+  duplicateTemplate(templateId: string) {
+    return client.POST("/api/v1/workflow-template/{id}/duplicate", {
+      params: { path: { id: templateId } },
+    });
+  }
+
+  getTriggerById(triggerId: string) {
+    return client.GET("/api/v1/trigger/{id}", {
+      params: { path: { id: triggerId } },
+    });
+  }
 }
