@@ -82,6 +82,7 @@ export default function WorkflowTemplateDetails() {
     duplicateTemplate,
     canEditTemplate,
     setTriggerInputs,
+    setStepsInputs,
   } = useTemplate(id);
 
   useEffect(() => {
@@ -144,7 +145,6 @@ export default function WorkflowTemplateDetails() {
         edges={edges}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={{
-          type: "floating",
           markerEnd: {
             type: MarkerType.ArrowClosed,
             color: "#000",
@@ -289,8 +289,9 @@ export default function WorkflowTemplateDetails() {
                 open={typeof drawerStepInfo !== "undefined"}
                 stepInfo={drawerStepInfo}
                 onSaveValues={(values) => {
-                  console.log(values);
+                  setStepsInputs(drawerStepInfo.id, values);
                 }}
+                editDisabled={!canEditTemplate}
               />
             )}
 
@@ -304,6 +305,7 @@ export default function WorkflowTemplateDetails() {
                 if (!drawerTrigerInfo) return;
                 setTriggerInputs(drawerTrigerInfo.id, values);
               }}
+              editDisabled={!canEditTemplate}
             />
           </div>
         </Panel>

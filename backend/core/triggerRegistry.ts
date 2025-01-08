@@ -3,6 +3,7 @@ import { Type } from "@sinclair/typebox";
 const HttpTriggerSchema = Type.Object(
   {
     method: Type.Union([Type.Literal("POST"), Type.Literal("GET")], {
+      type: "string",
       description: "HTTP method used to trigger the workflow.",
     }),
     url: Type.String({
@@ -12,7 +13,6 @@ const HttpTriggerSchema = Type.Object(
     }),
     redirectUrl: Type.Optional(
       Type.String({
-        format: "uri",
         description: "An optional URL to redirect after trigger execution.",
       })
     ),
@@ -36,3 +36,10 @@ export const triggerRegistry = [
     inputs: HttpTriggerSchema,
   },
 ];
+
+export type Trigger = (typeof triggerRegistry)[number];
+
+export let triggerRegistryMap: Map<string, Trigger> = new Map();
+triggerRegistry.map((trigger) => {
+  triggerRegistryMap.set(trigger.id, trigger);
+});

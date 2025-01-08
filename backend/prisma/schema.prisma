@@ -26,7 +26,7 @@ model Step {
   workflowTemplate      WorkflowTemplate  @relation(fields: [workflowTemplateId], references: [id], onDelete: Cascade)
   workflowTemplateId    String
   name                  String
-  type                  String // Plugin type identifier
+  type                  String
   inputs                Json
   visualizationMetadata Json
   fromConnections       Connection[]      @relation("fromStepRelation")
@@ -35,6 +35,7 @@ model Step {
   updatedAt             DateTime          @updatedAt
   StepRun               StepRun[]
   workflowTemplateEntry WorkflowTemplate? @relation("entryPointStep")
+  isConfigured          Boolean           @default(false)
 }
 
 model Connection {
@@ -82,6 +83,7 @@ model Trigger {
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
   visualizationMetadata Json
+  isConfigured          Boolean          @default(false)
 }
 
 enum WorkflowStatus {

@@ -22,7 +22,10 @@ export const Trigger = Type.Object({
   type: Type.String(),
   inputs: Type.Any(),
   visualizationMetadata: VisualizationMetadata,
+  isConfigured: Type.Boolean(),
 });
+
+export const TriggerInputOnly = Type.Omit(Trigger, ["isConfigured"]);
 
 export const Step = Type.Object({
   id: Type.String(),
@@ -30,7 +33,10 @@ export const Step = Type.Object({
   type: Type.String(),
   inputs: Type.Optional(Type.Any()),
   visualizationMetadata: VisualizationMetadata,
+  isConfigured: Type.Boolean(),
 });
+
+export const StepInputOnly = Type.Omit(Step, ["isConfigured"]);
 
 export const TemplateStatus = Type.Union([
   Type.Literal("DRAFT"),

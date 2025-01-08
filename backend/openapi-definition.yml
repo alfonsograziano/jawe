@@ -132,11 +132,14 @@ paths:
                           required:
                             - position
                             - data
+                        isConfigured:
+                          type: boolean
                       required:
                         - id
                         - name
                         - type
                         - visualizationMetadata
+                        - isConfigured
                   connections:
                     type: array
                     items:
@@ -188,11 +191,14 @@ paths:
                           required:
                             - position
                             - data
+                        isConfigured:
+                          type: boolean
                       required:
                         - id
                         - type
                         - inputs
                         - visualizationMetadata
+                        - isConfigured
                 required:
                   - id
                   - name

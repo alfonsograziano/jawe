@@ -1,6 +1,6 @@
 import createClient from "openapi-fetch";
 import type { paths } from "./schema";
-const client = createClient<paths>({ baseUrl: "http://localhost:8001" });
+const client = createClient<paths>({ baseUrl: "http://localhost:7001" });
 
 export type WorkflowsList =
   paths["/api/v1/workflow-template/"]["get"]["responses"]["200"]["content"]["application/json"];

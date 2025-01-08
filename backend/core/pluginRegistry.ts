@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import { PluginInfo } from "./basePlugin";
 
 export let pluginRegistry: PluginInfo[] = [];
+export let pluginRegistryMap: Map<string, PluginInfo> = new Map();
 async function loadPlugins(directory: string): Promise<PluginInfo[]> {
   const plugins = [];
   const files = await fs.readdir(directory);
@@ -36,4 +37,7 @@ async function loadPlugins(directory: string): Promise<PluginInfo[]> {
 export const initPluginsRegistry = async (directory: string) => {
   const plugins = await loadPlugins(directory);
   pluginRegistry = [...plugins];
+  plugins.map((plugin) => {
+    pluginRegistryMap.set(plugin.id, plugin);
+  });
 };

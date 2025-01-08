@@ -5,7 +5,7 @@ import { Value } from "@sinclair/typebox/value";
 
 // Email Notification Plugin
 const EmailInputSchema = Type.Object({
-  to: Type.String({ format: "email" }),
+  to: Type.String(),
   subject: Type.String({ minLength: 1 }),
   body: Type.String({ minLength: 1 }),
 });

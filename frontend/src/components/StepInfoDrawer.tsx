@@ -1,10 +1,21 @@
-import { Drawer } from "antd";
+import { Drawer, Divider, Button } from "antd";
 import { useEffect, useState } from "react";
 import { Client, PluginDetails } from "../client";
 import Paragraph from "antd/es/typography/Paragraph";
 import Title from "antd/es/typography/Title";
 import { Collapse } from "antd";
-import DynamicJSONForm from "./DynamicJSONForm";
+import Form from "@rjsf/antd";
+import validator from "@rjsf/validator-ajv8";
+import { IconButtonProps } from "@rjsf/utils";
+
+function SubmitButton(props: IconButtonProps) {
+  const { icon, iconType, ...btnProps } = props;
+  return (
+    <Button type="primary" htmlType="submit" {...btnProps}>
+      Submit
+    </Button>
+  );
+}
 
 const { Panel } = Collapse;
 type StepInfoDrawerProps = {
@@ -12,6 +23,7 @@ type StepInfoDrawerProps = {
   open: boolean;
   stepInfo: StepInfo;
   onSaveValues: (values: any) => void;
+  editDisabled: boolean;
 };
 
 type StepInfo = {
@@ -25,6 +37,7 @@ const StepInfoDrawer = ({
   open,
   stepInfo,
   onSaveValues,
+  editDisabled,
 }: StepInfoDrawerProps) => {
   const [pluginData, setPluginData] = useState<PluginDetails | undefined>();
   const [loadingPluginData, setLoadingPluginData] = useState(false);
@@ -51,11 +64,21 @@ const StepInfoDrawer = ({
     >
       <Paragraph>{pluginData.description}</Paragraph>
       <Title level={3}>Configuration</Title>
-      <DynamicJSONForm
-        schema={pluginData.inputs}
-        onFinish={onSaveValues}
-        defaultData={stepInfo.inputs}
-      />
+
+      {pluginData.inputs && (
+        <Form
+          schema={pluginData.inputs}
+          validator={validator}
+          formData={stepInfo.inputs}
+          templates={{ ButtonTemplates: { SubmitButton } }}
+          onSubmit={(values: any) => {
+            onSaveValues(values.formData);
+            onClose();
+          }}
+          disabled={editDisabled}
+        />
+      )}
+      <Divider />
       <Collapse>
         <Panel header="Show plugin details" key="1">
           <pre

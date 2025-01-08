@@ -148,6 +148,7 @@ export interface paths {
                                         label: string;
                                     };
                                 };
+                                isConfigured: boolean;
                             }[];
                             connections?: {
                                 id: string;
@@ -169,6 +170,7 @@ export interface paths {
                                         label: string;
                                     };
                                 };
+                                isConfigured: boolean;
                             }[];
                         };
                     };

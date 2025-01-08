@@ -4,7 +4,7 @@ import { Type, Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
 const HttpRequestInputSchema = Type.Object({
-  url: Type.String({ format: "uri" }),
+  url: Type.String(),
   method: Type.String({ enum: ["GET", "POST"] }),
   body: Type.Optional(Type.Any()),
 });

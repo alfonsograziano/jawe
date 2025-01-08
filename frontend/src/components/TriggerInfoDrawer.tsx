@@ -1,10 +1,22 @@
-import { Drawer } from "antd";
+import { Drawer, Divider, Button } from "antd";
 import { useEffect, useState } from "react";
 import { Client, TriggerDetails } from "../client";
 import Paragraph from "antd/es/typography/Paragraph";
 import Title from "antd/es/typography/Title";
-import DynamicJSONForm from "./DynamicJSONForm";
 import { Collapse } from "antd";
+import Form from "@rjsf/antd";
+import validator from "@rjsf/validator-ajv8";
+
+import { IconButtonProps } from "@rjsf/utils";
+
+function SubmitButton(props: IconButtonProps) {
+  const { icon, iconType, ...btnProps } = props;
+  return (
+    <Button type="primary" htmlType="submit" {...btnProps}>
+      Submit
+    </Button>
+  );
+}
 
 const { Panel } = Collapse;
 type TriggerInfoDrawerProps = {
@@ -12,6 +24,7 @@ type TriggerInfoDrawerProps = {
   open: boolean;
   triggerInfo?: TriggerInfo;
   onSaveValues: (values: any) => void;
+  editDisabled: boolean;
 };
 
 type TriggerInfo = {
@@ -25,6 +38,7 @@ const TriggerInfoDrawer = ({
   open,
   triggerInfo,
   onSaveValues,
+  editDisabled,
 }: TriggerInfoDrawerProps) => {
   const [triggerData, setTriggerData] = useState<TriggerDetails | undefined>();
   const [loadingTriggerData, setLoadingTriggerData] = useState(false);
@@ -54,11 +68,20 @@ const TriggerInfoDrawer = ({
 
       <Title level={3}>Trigger configuration</Title>
 
-      <DynamicJSONForm
-        schema={triggerData.inputs}
-        onFinish={onSaveValues}
-        defaultData={triggerInfo.inputs}
-      />
+      {triggerData.inputs && (
+        <Form
+          schema={triggerData.inputs}
+          validator={validator}
+          formData={triggerInfo.inputs}
+          templates={{ ButtonTemplates: { SubmitButton } }}
+          onSubmit={(values: any) => {
+            onSaveValues(values.formData);
+            onClose();
+          }}
+          disabled={editDisabled}
+        />
+      )}
+      <Divider />
 
       <Collapse>
         <Panel header="Show trigger details" key="1">

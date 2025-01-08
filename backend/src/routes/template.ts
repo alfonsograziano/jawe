@@ -4,12 +4,19 @@ import { Static } from "@sinclair/typebox";
 import {
   Step,
   StepConnections,
+  StepInputOnly,
   TemplateStatus,
   Trigger,
+  TriggerInputOnly,
   validateTemplate,
   validateVisualizationMetadata,
 } from "../../core/validateTemplate";
 import crypto from "crypto";
+import { triggerRegistryMap } from "../../core/triggerRegistry";
+import { Value } from "@sinclair/typebox/value";
+import { pluginRegistryMap } from "../../core/pluginRegistry";
+import Ajv from "ajv";
+const ajv = new Ajv();
 
 const DuplicateTemplateParams = Type.Object({
   id: Type.String(),
@@ -32,11 +39,11 @@ const CreateWorkflowBody = Type.Object({
 
 const UpdateWorkflowBody = Type.Object({
   name: Type.Optional(Type.String()),
-  steps: Type.Optional(Type.Array(Step)),
+  steps: Type.Optional(Type.Array(StepInputOnly)),
   connections: Type.Optional(Type.Array(StepConnections)),
   entryPointId: Type.Optional(Type.String()),
   status: Type.Optional(TemplateStatus),
-  triggers: Type.Array(Trigger),
+  triggers: Type.Array(TriggerInputOnly),
 });
 
 const UpdateWorkflowParams = Type.Object({
@@ -296,6 +303,17 @@ export default async function workflowTemplate(app: FastifyInstance) {
 
         // Upsert each step individually and link them to the workflow
         for (const step of steps || []) {
+          // Validate if the step configuration is valid
+
+          const pluginSchema = pluginRegistryMap.get(step.type);
+          if (!pluginSchema)
+            throw new Error(
+              "cannot find plugin schema definition for " + step.id
+            );
+
+          const validate = ajv.compile(pluginSchema.inputs);
+          const isValid = validate(step.inputs);
+
           await app.prisma.step.upsert({
             where: { id: step.id },
             create: {
@@ -304,6 +322,7 @@ export default async function workflowTemplate(app: FastifyInstance) {
               type: step.type,
               workflowTemplateId: id,
               inputs: step.inputs || {},
+              isConfigured: isValid,
               visualizationMetadata: step.visualizationMetadata || {},
             },
             update: {
@@ -311,6 +330,7 @@ export default async function workflowTemplate(app: FastifyInstance) {
               type: step.type,
               workflowTemplateId: id,
               inputs: step.inputs,
+              isConfigured: isValid,
               visualizationMetadata: step.visualizationMetadata,
             },
           });
@@ -333,18 +353,28 @@ export default async function workflowTemplate(app: FastifyInstance) {
 
         // Upsert each trigger individually and link them to the workflow
         for (const trigger of triggers || []) {
+          // Validate if the trigger configuration is valid
+          const triggerSchema = triggerRegistryMap.get(trigger.type);
+          if (!triggerSchema)
+            throw new Error(
+              "cannot find trigger schema definition for " + trigger.id
+            );
+          const isValid = Value.Check(triggerSchema.inputs, trigger.inputs);
+
           await app.prisma.trigger.upsert({
             where: { id: trigger.id },
             create: {
               id: trigger.id,
               type: trigger.type,
               inputs: trigger.inputs,
+              isConfigured: isValid,
               workflowTemplateId: id,
               visualizationMetadata: trigger.visualizationMetadata || {},
             },
             update: {
               type: trigger.type,
               inputs: trigger.inputs,
+              isConfigured: isValid,
               visualizationMetadata: trigger.visualizationMetadata,
               workflowTemplateId: id,
             },
@@ -363,7 +393,7 @@ export default async function workflowTemplate(app: FastifyInstance) {
 
         return reply.status(200).send(updatedWorkflow);
       } catch (error) {
-        app.log.error(error);
+        console.log(error);
         return reply
           .status(500)
           .send({ error: "An error occurred while updating the workflow." });

@@ -118,6 +118,7 @@ export const addNewStepToTemplate = (
     name: plugin.name,
     type: plugin.id,
     inputs: {},
+    isConfigured: false,
     visualizationMetadata: {
       position: { x: 500, y: 500 },
       data: { label: plugin.name },
@@ -159,6 +160,10 @@ export const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
       id: step.id,
       position: metadata.position,
       type: nodeType,
+      style: {
+        borderColor: step.isConfigured ? "green" : "black",
+        borderWidth: step.isConfigured ? "1.5px" : "1px",
+      },
       data: {
         ...metadata.data,
         forceToolbarVisible: false,
@@ -186,6 +191,10 @@ export const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
       id: trigger.id,
       position: metadata.position,
       type: nodeType,
+      style: {
+        borderColor: trigger.isConfigured ? "green" : "black",
+        borderWidth: trigger.isConfigured ? "1.5px" : "1px",
+      },
       data: {
         ...metadata.data,
         forceToolbarVisible: false,
@@ -230,6 +239,7 @@ export const addTriggerToTemplate = (
     id: triggerPrefix + trigger.id + crypto.randomUUID(),
     type: trigger.id,
     inputs: {},
+    isConfigured: false,
     visualizationMetadata: {
       position: { x: 500, y: 500 },
       data: { label: trigger.name },
@@ -297,11 +307,11 @@ const setStepInputsInTemplate = (
   // Create a deep copy of the template
   const newTemplate = structuredClone(template);
 
-  const trigger = newTemplate.steps.find((step) => step.id === stepId);
+  const step = newTemplate.steps.find((step) => step.id === stepId);
 
-  if (!trigger) return newTemplate;
+  if (!step) return newTemplate;
 
-  trigger.inputs = inputs;
+  step.inputs = inputs;
 
   return newTemplate;
 };
@@ -421,6 +431,10 @@ export const useTemplate = (templateId: string) => {
       setTemplateWithHistory(
         setTriggerInputsInTemplate(template, triggerId, inputs)
       );
+    },
+    setStepsInputs: (stepId: string, inputs: any) => {
+      if (!template) return;
+      setTemplateWithHistory(setStepInputsInTemplate(template, stepId, inputs));
     },
   };
 };
