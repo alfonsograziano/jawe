@@ -69,6 +69,7 @@ export default async function webhook(app: FastifyInstance) {
           data: {
             templateId: trigger.workflowTemplateId,
             status: "PENDING",
+            //TODO: Remove start time from here as it must be set when you pick the job
             startTime: new Date(),
           },
         });
