@@ -36,6 +36,8 @@ export const Step = Type.Object({
   isConfigured: Type.Boolean(),
 });
 
+export type Step = Static<typeof Step>;
+
 export const StepInputOnly = Type.Omit(Step, ["isConfigured"]);
 
 export const TemplateStatus = Type.Union([
@@ -51,6 +53,8 @@ export const WorkflowTemplate = Type.Object({
   status: TemplateStatus,
   triggers: Type.Array(Trigger),
 });
+
+export type WorkflowTemplate = Static<typeof WorkflowTemplate>;
 
 export type VisualizationMetadataType = Static<typeof VisualizationMetadata>;
 
