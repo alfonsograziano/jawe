@@ -7,6 +7,7 @@ import { Collapse } from "antd";
 import Form from "@rjsf/antd";
 import validator from "@rjsf/validator-ajv8";
 import { IconButtonProps } from "@rjsf/utils";
+import JsonInputForm from "./JSONInputForm";
 
 function SubmitButton(props: IconButtonProps) {
   const { icon, iconType, ...btnProps } = props;
@@ -65,18 +66,31 @@ const StepInfoDrawer = ({
       <Paragraph>{pluginData.description}</Paragraph>
       <Title level={3}>Configuration</Title>
 
+      <Paragraph>Step ID: {stepInfo.id}</Paragraph>
+
       {pluginData.inputs && (
-        <Form
-          schema={pluginData.inputs}
-          validator={validator}
-          formData={stepInfo.inputs}
-          templates={{ ButtonTemplates: { SubmitButton } }}
-          onSubmit={(values: any) => {
-            onSaveValues(values.formData);
-            onClose();
-          }}
-          disabled={editDisabled}
-        />
+        <>
+          {pluginData.id === "conditional-plugin" ? (
+            <JsonInputForm
+              stepInfo={stepInfo}
+              onSaveValues={onSaveValues}
+              onClose={onClose}
+              editDisabled={editDisabled}
+            />
+          ) : (
+            <Form
+              schema={pluginData.inputs}
+              validator={validator}
+              formData={stepInfo.inputs}
+              templates={{ ButtonTemplates: { SubmitButton } }}
+              onSubmit={(values: any) => {
+                onSaveValues(values.formData);
+                onClose();
+              }}
+              disabled={editDisabled}
+            />
+          )}
+        </>
       )}
       <Divider />
       <Collapse>
