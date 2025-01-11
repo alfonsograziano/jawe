@@ -1,7 +1,5 @@
 import { BasePlugin } from "../../core/basePlugin";
-import { WorkflowContext } from "../../workflowContext";
 import { Type, Static } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
 
 // UUID Generator Plugin
 const UUIDOutputSchema = Type.Object({
@@ -21,7 +19,7 @@ export default class UUIDGeneratorPlugin implements BasePlugin {
     };
   }
 
-  async execute(inputs: {}, context: WorkflowContext): Promise<UUIDOutput> {
+  async execute(inputs: {}): Promise<UUIDOutput> {
     const uuid = crypto.randomUUID();
     return { uuid };
   }

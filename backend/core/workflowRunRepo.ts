@@ -63,7 +63,7 @@ export class WorkflowRunRepository {
     const run = await this.prisma.workflowRun.findUnique({
       where: { id: runId },
       include: {
-        stepRun: true,
+        stepRuns: true,
       },
     });
     if (!run) {

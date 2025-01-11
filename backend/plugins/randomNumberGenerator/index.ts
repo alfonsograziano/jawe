@@ -1,5 +1,4 @@
 import { BasePlugin } from "../../core/basePlugin";
-import { WorkflowContext } from "../../workflowContext";
 import { Type, Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
@@ -27,10 +26,7 @@ export default class RandomNumberGeneratorPlugin implements BasePlugin {
     };
   }
 
-  async execute(
-    inputs: RandomNumberInput,
-    context: WorkflowContext
-  ): Promise<RandomNumberOutput> {
+  async execute(inputs: RandomNumberInput): Promise<RandomNumberOutput> {
     const isValid = Value.Check(RandomNumberInputSchema, inputs);
     if (!isValid) {
       throw new Error("Invalid input provided");

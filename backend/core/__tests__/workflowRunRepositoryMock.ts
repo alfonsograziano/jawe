@@ -32,7 +32,7 @@ export class WorkflowRunRepositoryMock {
       runId,
       updatedAt: new Date(),
     };
-    return { ...stepRuns[stepRunId] };
+    return stepRuns[stepRunId];
   }
 
   async changeStepRunStatus(stepRunId: string, status: StepRunStatus) {

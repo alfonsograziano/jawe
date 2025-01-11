@@ -1,5 +1,4 @@
 import { BasePlugin } from "../../core/basePlugin";
-import { WorkflowContext } from "../../workflowContext";
 import { Type, Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
@@ -25,10 +24,7 @@ export default class HelloWorld implements BasePlugin {
     };
   }
 
-  async execute(
-    inputs: HelloWorldInput,
-    context: WorkflowContext
-  ): Promise<HelloWorldOutput> {
+  async execute(inputs: HelloWorldInput): Promise<HelloWorldOutput> {
     const isValid = Value.Check(InputSchema, inputs);
     if (!isValid) {
       throw new Error("Invalid input provided");

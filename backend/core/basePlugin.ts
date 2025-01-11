@@ -1,5 +1,3 @@
-import { WorkflowContext } from "../workflowContext";
-
 export type PluginInfo = {
   id: string;
   name: string;
@@ -18,11 +16,7 @@ export interface BasePlugin {
   /**
    * Executes the plugin logic.
    * @param inputs - The inputs provided for this execution.
-   * @param context - The workflow context including templates and current state.
    * @returns The outputs of the plugin execution.
    */
-  execute(
-    inputs: Record<string, any>,
-    context: WorkflowContext
-  ): Promise<Record<string, any>>;
+  execute(inputs: Record<string, any>): Promise<Record<string, any>>;
 }

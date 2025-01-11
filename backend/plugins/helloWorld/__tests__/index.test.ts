@@ -6,7 +6,8 @@ describe("HelloWorld Plugin", () => {
     const plugin = new HelloWorld();
     const pluginInfo = plugin.getPluginInfo();
     expect(JSON.parse(JSON.stringify(pluginInfo))).toEqual({
-      name: "HelloWorld",
+      name: "Hello World",
+      id: "hello-world",
       description: "A plugin that takes a name as input and returns greetings",
       inputs: {
         type: "object",
@@ -39,7 +40,7 @@ describe("HelloWorld Plugin", () => {
       run: {},
     };
 
-    const result = await plugin.execute(inputs, mockContext);
+    const result = await plugin.execute(inputs);
 
     expect(result).toEqual({
       greetings: "Hello Alice",
@@ -54,7 +55,7 @@ describe("HelloWorld Plugin", () => {
       run: {},
     };
 
-    await expect(plugin.execute(inputs, mockContext)).rejects.toThrowError(
+    await expect(plugin.execute(inputs)).rejects.toThrowError(
       "Invalid input provided"
     );
   });

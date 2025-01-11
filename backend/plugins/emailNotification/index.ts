@@ -1,5 +1,4 @@
 import { BasePlugin } from "../../core/basePlugin";
-import { WorkflowContext } from "../../workflowContext";
 import { Type, Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
@@ -28,10 +27,7 @@ export default class EmailNotificationPlugin implements BasePlugin {
     };
   }
 
-  async execute(
-    inputs: EmailInput,
-    context: WorkflowContext
-  ): Promise<EmailOutput> {
+  async execute(inputs: EmailInput): Promise<EmailOutput> {
     const isValid = Value.Check(EmailInputSchema, inputs);
     if (!isValid) {
       throw new Error("Invalid input provided");

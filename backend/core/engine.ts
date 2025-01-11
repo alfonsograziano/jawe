@@ -1,6 +1,8 @@
+import { JsonObject } from "@prisma/client/runtime/library";
 import { Step, WorkflowTemplate } from "./validateTemplate";
 import { WorkflowRunRepository } from "./workflowRunRepo";
-import { WorkflowStatus, StepRunStatus } from "@prisma/client";
+import { WorkflowStatus, StepRunStatus, StepRun } from "@prisma/client";
+import { pluginRegistryMap } from "./pluginRegistry";
 
 type EngineConstructor = {
   workflow: WorkflowTemplate;
@@ -31,8 +33,8 @@ export class WorkflowEngine {
 
       let nextStep = this.getNextStep(entryPoint);
       while (nextStep) {
-        await this.executeStep(nextStep);
-        nextStep = this.getNextStep(nextStep);
+        const stepRun = await this.executeStep(nextStep);
+        nextStep = this.getNextStep(nextStep, stepRun);
       }
 
       await this.repository.changeExecutionStatus(
@@ -40,6 +42,7 @@ export class WorkflowEngine {
         WorkflowStatus.COMPLETED
       );
     } catch (error) {
+      console.log(error);
       await this.repository.changeExecutionStatus(
         this.runId,
         WorkflowStatus.FAILED
@@ -71,15 +74,15 @@ export class WorkflowEngine {
     try {
       const resolvedInputs = this.resolveInputs(step.id);
 
-      // Simulate plugin execution and get the outputs as result
-      const outputs = await this.simulatePluginExecution(step, resolvedInputs);
+      const outputs = await this.executePlugin(stepRun, resolvedInputs);
 
-      await this.repository.updateStepRunStatus(
+      return this.repository.updateStepRunStatus(
         stepRun.id,
         StepRunStatus.COMPLETED,
         outputs
       );
     } catch (error) {
+      console.log(error);
       await this.repository.updateStepRunStatus(
         stepRun.id,
         StepRunStatus.FAILED,
@@ -89,17 +92,44 @@ export class WorkflowEngine {
     }
   }
 
-  getNextStep(step: Step) {
-    const connection = this.workflow.connections.find(
+  getNextStep(step: Step, stepRun?: StepRun) {
+    const connections = this.workflow.connections.filter(
       (conn) => conn.fromStepId === step.id
     );
 
-    if (!connection) return undefined;
+    if (!connections) return undefined;
 
-    return this.workflow.steps.find((s) => s.id === connection.toStepId);
+    const candidates = connections.map((connection) => {
+      const candidateStep = this.workflow.steps.find(
+        (step) => connection.toStepId === step.id
+      );
+      if (!candidateStep)
+        throw new Error("Cannot find candidate defined in connection");
+
+      return candidateStep;
+    });
+
+    // We're in one of the end nodes
+    if (candidates.length === 0) return undefined;
+
+    // If the output of the lates step contains
+    if (stepRun) {
+      const nextStepSelectedFromPrevStep =
+        this.extractNextStepFromStepRun(stepRun);
+      if (nextStepSelectedFromPrevStep) return nextStepSelectedFromPrevStep;
+    }
+
+    if (candidates.length === 1) return candidates[0];
+
+    // Based on the previous step output with the reserved word
+
+    // Don't manage for now the case of multiple candidates (parallel executions)
+    // TODO: Allow for multple, parallel executions
+    return candidates[0];
   }
 
   resolveInputs(stepId: string) {
+    // Assuming we only got static steps for now
     const inputs = this.workflow.steps.find(
       (step) => step.id === stepId
     )?.inputs;
@@ -109,8 +139,32 @@ export class WorkflowEngine {
     return inputs;
   }
 
-  async simulatePluginExecution(step: Step, inputs: Record<string, unknown>) {
+  async executePlugin(
+    stepRun: StepRun,
+    resolvedInputs: Record<string, unknown>
+  ) {
     // Simulate the execution of the plugin and return mock outputs
-    return { success: true, data: `Executed step ${step.name}` };
+    const step = this.workflow.steps.find((step) => step.id === stepRun.stepId);
+    if (!step) throw new Error("Cannot find the related step");
+
+    const plugin = pluginRegistryMap.get(step.type);
+    if (!plugin) throw new Error("Cannot find plugin");
+
+    const instance = new plugin.default();
+    const outputs = await instance.execute(resolvedInputs);
+
+    return outputs;
+  }
+
+  extractNextStepFromStepRun(stepRun: StepRun) {
+    if (stepRun && typeof stepRun.output === "object") {
+      const stepOutput = stepRun.output as JsonObject;
+      if (typeof stepOutput.nextStepId === "string") {
+        const candidateSelectedByPrevStep = this.workflow.steps.find(
+          (step) => stepOutput.nextStepId === step.id
+        );
+        if (candidateSelectedByPrevStep) return candidateSelectedByPrevStep;
+      }
+    }
   }
 }

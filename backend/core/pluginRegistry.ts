@@ -1,11 +1,16 @@
 import path from "path";
 import fs from "fs/promises";
-import { PluginInfo } from "./basePlugin";
+import { PluginInfo, BasePlugin } from "./basePlugin";
 
-export let pluginRegistry: PluginInfo[] = [];
-export let pluginRegistryMap: Map<string, PluginInfo> = new Map();
-async function loadPlugins(directory: string): Promise<PluginInfo[]> {
-  const plugins = [];
+export type Plugin<T extends BasePlugin = BasePlugin> = PluginInfo & {
+  default: new () => T;
+};
+
+export let pluginRegistry: Plugin[] = [];
+export let pluginRegistryMap: Map<string, Plugin> = new Map();
+
+async function loadPlugins(directory: string): Promise<Plugin[]> {
+  const plugins: Plugin[] = [];
   const files = await fs.readdir(directory);
 
   for (const file of files) {
@@ -19,14 +24,24 @@ async function loadPlugins(directory: string): Promise<PluginInfo[]> {
 
         const pluginModule = await import(modulePath);
 
-        if (pluginModule.default) {
+        // Ensure the default export is a constructor and matches BasePlugin
+        if (
+          pluginModule.default &&
+          typeof pluginModule.default === "function"
+        ) {
           const instance = new pluginModule.default();
-          const info = instance.getPluginInfo();
+          if (typeof instance.getPluginInfo === "function") {
+            const info = instance.getPluginInfo();
 
-          plugins.push(info);
+            const plugin: Plugin = {
+              ...info,
+              default: pluginModule.default,
+            };
+
+            plugins.push(plugin);
+          }
         }
       } catch (error) {
-        console.log();
         console.error(`Error loading plugin at ${pluginPath}:`, error);
       }
     }
@@ -34,10 +49,11 @@ async function loadPlugins(directory: string): Promise<PluginInfo[]> {
 
   return plugins;
 }
+
 export const initPluginsRegistry = async (directory: string) => {
   const plugins = await loadPlugins(directory);
   pluginRegistry = [...plugins];
-  plugins.map((plugin) => {
+  plugins.forEach((plugin) => {
     pluginRegistryMap.set(plugin.id, plugin);
   });
 };
