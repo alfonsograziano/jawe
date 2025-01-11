@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Modal, Button, Card, Radio, RadioChangeEvent } from "antd";
+import { Modal, Button, Radio, RadioChangeEvent } from "antd";
+import Card from "antd/es/card/Card";
 
 type Trigger = {
   name: string;

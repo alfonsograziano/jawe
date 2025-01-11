@@ -13,26 +13,26 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { WorkflowStep } from "../client";
-import AddNewPlugin from "../components/AddNewPlugin";
+import AddNewPlugin from "./AddNewPlugin";
 import { Button, message, Popover, Input } from "antd";
-import BackButton from "../components/Back";
+import BackButton from "./Back";
 import { useNavigate } from "react-router-dom";
-import NodeWithToolbar from "../components/NodeWithToolbar";
+import NodeWithToolbar from "./NodeWithToolbar";
 import { useTemplate } from "../hooks/useTemplate";
-import StepInfoDrawer from "../components/StepInfoDrawer";
-import AddNewTrigger from "../components/AddNewTrigger";
-import EntryPointWithToolbar from "../components/EntryPointNode";
-import TriggerWithToolbar from "../components/TriggerWithToolbar";
+import StepInfoDrawer from "./StepInfoDrawer";
+import AddNewTrigger from "./AddNewTrigger";
+import EntryPointWithToolbar from "./EntryPointNode";
+import TriggerWithToolbar from "./TriggerWithToolbar";
 import {
   SaveOutlined,
   UndoOutlined,
   RedoOutlined,
   UnorderedListOutlined,
 } from "@ant-design/icons";
-import DeleteTemplate from "../components/DeleteTemplate";
-import PublishTemplateButton from "../components/PublishTemplateButton";
-import DuplicateButtonAndFeedback from "../components/DuplicateButtonAndFeedback";
-import TriggerInfoDrawer from "../components/TriggerInfoDrawer";
+import DeleteTemplate from "./DeleteTemplate";
+import PublishTemplateButton from "./PublishTemplateButton";
+import DuplicateButtonAndFeedback from "./DuplicateButtonAndFeedback";
+import TriggerInfoDrawer from "./TriggerInfoDrawer";
 import Card from "antd/es/card/Card";
 
 const nodeTypes = {
@@ -41,7 +41,17 @@ const nodeTypes = {
   "trigger-with-toolbar": TriggerWithToolbar,
 };
 
-export default function WorkflowTemplateDetails({ id }: { id: string }) {
+type WorkflowTemplateDetailsProps = {
+  id: string;
+  onRefetchTemplates: () => void;
+  onDeleteTemplate: () => void;
+};
+
+export default function WorkflowTemplateDetails({
+  id,
+  onRefetchTemplates,
+  onDeleteTemplate,
+}: WorkflowTemplateDetailsProps) {
   const navigate = useNavigate();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -176,7 +186,7 @@ export default function WorkflowTemplateDetails({ id }: { id: string }) {
         removeConnections(edges.map((edge) => edge.id));
       }}
     >
-      <Panel>
+      <Panel position="top-left">
         <div style={{ display: "flex", gap: 20 }}>
           <Card
             style={{ boxShadow: "0px 0px 10px #d3d3d3", margin: 4 }}
@@ -194,7 +204,10 @@ export default function WorkflowTemplateDetails({ id }: { id: string }) {
 
               {template.status === "DRAFT" && (
                 <PublishTemplateButton
-                  onConfirmPublish={publishTemplateAndShowFeedback}
+                  onConfirmPublish={async () => {
+                    await publishTemplateAndShowFeedback();
+                    onRefetchTemplates();
+                  }}
                 />
               )}
 
@@ -208,12 +221,15 @@ export default function WorkflowTemplateDetails({ id }: { id: string }) {
               )}
             </div>
           </Card>
+        </div>
+      </Panel>
 
+      <Panel position="bottom-left">
+        <div style={{ display: "flex", gap: 20 }}>
           <Card
             style={{
-              position: "fixed",
-              bottom: "20px",
-              left: "60px",
+              position: "relative",
+              left: "40px",
               boxShadow: "0px 0px 10px #d3d3d3",
               margin: 4,
             }}
@@ -265,7 +281,7 @@ export default function WorkflowTemplateDetails({ id }: { id: string }) {
               <DeleteTemplate
                 onConfirmDelete={async () => {
                   await deleteTemplate();
-                  navigate(-1);
+                  onDeleteTemplate();
                 }}
               />
 
@@ -281,38 +297,38 @@ export default function WorkflowTemplateDetails({ id }: { id: string }) {
               />
             </div>
           </Card>
-
-          {drawerStepInfo && (
-            <StepInfoDrawer
-              onClose={() => {
-                setDrawerStepInfo(undefined);
-              }}
-              open={typeof drawerStepInfo !== "undefined"}
-              stepInfo={drawerStepInfo}
-              onSaveValues={(values) => {
-                setStepsInputs(drawerStepInfo.id, values);
-              }}
-              editDisabled={!canEditTemplate}
-            />
-          )}
-
-          <TriggerInfoDrawer
-            onClose={() => {
-              setDrawerTriggerInfo(undefined);
-            }}
-            open={typeof drawerTrigerInfo !== "undefined"}
-            triggerInfo={drawerTrigerInfo}
-            onSaveValues={(values) => {
-              if (!drawerTrigerInfo) return;
-              setTriggerInputs(drawerTrigerInfo.id, values);
-            }}
-            editDisabled={!canEditTemplate}
-          />
         </div>
       </Panel>
       <Controls />
       <MiniMap />
       <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+
+      {drawerStepInfo && (
+        <StepInfoDrawer
+          onClose={() => {
+            setDrawerStepInfo(undefined);
+          }}
+          open={typeof drawerStepInfo !== "undefined"}
+          stepInfo={drawerStepInfo}
+          onSaveValues={(values) => {
+            setStepsInputs(drawerStepInfo.id, values);
+          }}
+          editDisabled={!canEditTemplate}
+        />
+      )}
+
+      <TriggerInfoDrawer
+        onClose={() => {
+          setDrawerTriggerInfo(undefined);
+        }}
+        open={typeof drawerTrigerInfo !== "undefined"}
+        triggerInfo={drawerTrigerInfo}
+        onSaveValues={(values) => {
+          if (!drawerTrigerInfo) return;
+          setTriggerInputs(drawerTrigerInfo.id, values);
+        }}
+        editDisabled={!canEditTemplate}
+      />
     </ReactFlow>
   );
 }

@@ -16,7 +16,7 @@
     "@rjsf/utils": "^5.23.2",
     "@rjsf/validator-ajv8": "^5.23.2",
     "@xyflow/react": "^12.3.6",
-    "antd": "^5.22.7",
+    "antd": "^5.23.0",
     "openapi-fetch": "^0.13.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
