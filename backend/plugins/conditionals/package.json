@@ -1,0 +1,12 @@
+{
+  "name": "conditionals",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "json-rules-engine": "^7.3.0"
+  },
+  "description": ""
+}
