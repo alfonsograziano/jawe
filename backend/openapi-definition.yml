@@ -618,6 +618,272 @@ paths:
                     type: string
                 required:
                   - error
+  /api/v1/runs/{templateId}:
+    get:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: templateId
+          required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    status:
+                      anyOf:
+                        - type: string
+                          enum:
+                            - PENDING
+                        - type: string
+                          enum:
+                            - RUNNING
+                        - type: string
+                          enum:
+                            - COMPLETED
+                        - type: string
+                          enum:
+                            - FAILED
+                    createdAt:
+                      format: date-time
+                      type: string
+                    updatedAt:
+                      format: date-time
+                      type: string
+                  required:
+                    - id
+                    - status
+                    - createdAt
+                    - updatedAt
+  /api/v1/run/{workflowRunId}:
+    get:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: workflowRunId
+          required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - PENDING
+                      - type: string
+                        enum:
+                          - RUNNING
+                      - type: string
+                        enum:
+                          - COMPLETED
+                      - type: string
+                        enum:
+                          - FAILED
+                  startTime:
+                    format: date-time
+                    type: string
+                  endTime:
+                    format: date-time
+                    type: string
+                  stepRuns:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        status:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - PENDING
+                            - type: string
+                              enum:
+                                - RUNNING
+                            - type: string
+                              enum:
+                                - COMPLETED
+                            - type: string
+                              enum:
+                                - FAILED
+                        output: {}
+                        createdAt:
+                          format: date-time
+                          type: string
+                        updatedAt:
+                          format: date-time
+                          type: string
+                        stepId:
+                          type: string
+                        runId:
+                          type: string
+                      required:
+                        - id
+                        - status
+                        - output
+                        - createdAt
+                        - updatedAt
+                        - stepId
+                        - runId
+                  template:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      status:
+                        anyOf:
+                          - type: string
+                            enum:
+                              - DRAFT
+                          - type: string
+                            enum:
+                              - PUBLISHED
+                      entryPointId:
+                        type: string
+                      steps:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                            inputs: {}
+                            visualizationMetadata:
+                              type: object
+                              properties:
+                                position:
+                                  type: object
+                                  properties:
+                                    x:
+                                      type: number
+                                    y:
+                                      type: number
+                                  required:
+                                    - x
+                                    - y
+                                data:
+                                  type: object
+                                  properties:
+                                    label:
+                                      type: string
+                                  required:
+                                    - label
+                              required:
+                                - position
+                                - data
+                            isConfigured:
+                              type: boolean
+                          required:
+                            - id
+                            - name
+                            - type
+                            - visualizationMetadata
+                            - isConfigured
+                      connections:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            fromStepId:
+                              type: string
+                            toStepId:
+                              type: string
+                          required:
+                            - id
+                            - fromStepId
+                            - toStepId
+                      updatedAt:
+                        format: date-time
+                        type: string
+                      triggers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            type:
+                              type: string
+                            inputs: {}
+                            visualizationMetadata:
+                              type: object
+                              properties:
+                                position:
+                                  type: object
+                                  properties:
+                                    x:
+                                      type: number
+                                    y:
+                                      type: number
+                                  required:
+                                    - x
+                                    - y
+                                data:
+                                  type: object
+                                  properties:
+                                    label:
+                                      type: string
+                                  required:
+                                    - label
+                              required:
+                                - position
+                                - data
+                            isConfigured:
+                              type: boolean
+                          required:
+                            - id
+                            - type
+                            - inputs
+                            - visualizationMetadata
+                            - isConfigured
+                    required:
+                      - id
+                      - name
+                      - status
+                      - steps
+                      - updatedAt
+                      - triggers
+                required:
+                  - id
+                  - status
+                  - startTime
+                  - stepRuns
+                  - template
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
   /api/v1/webhook/{*}:
     get: &a1
       parameters:

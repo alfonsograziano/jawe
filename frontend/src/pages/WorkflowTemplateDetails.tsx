@@ -201,7 +201,10 @@ export default function WorkflowTemplateDetails() {
                 )}
 
                 {template.status === "PUBLISHED" && (
-                  <Button icon={<UnorderedListOutlined />}>
+                  <Button
+                    icon={<UnorderedListOutlined />}
+                    onClick={() => navigate(`/workflow/${id}/runs`)}
+                  >
                     View executions
                   </Button>
                 )}

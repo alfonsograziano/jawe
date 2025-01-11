@@ -27,7 +27,7 @@ const WorkflowsTemplateList = ({ workflows }: { workflows: WorkflowsList }) => {
       render: (_: any, record: { id: string }) => (
         <Button
           type="primary"
-          onClick={() => navigate(`/workflow-template/${record.id}`)}
+          onClick={() => navigate(`/workflow/${record.id}`)}
         >
           Open details
         </Button>

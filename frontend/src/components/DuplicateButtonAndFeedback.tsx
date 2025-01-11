@@ -19,10 +19,7 @@ const DuplicateButtonAndFeedback = ({
       content: (
         <>
           New template created.
-          <Button
-            type="link"
-            onClick={() => navigate(`/workflow-template/${id}`)}
-          >
+          <Button type="link" onClick={() => navigate(`/workflow/${id}`)}>
             Open
           </Button>
         </>

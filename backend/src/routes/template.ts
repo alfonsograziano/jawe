@@ -67,7 +67,7 @@ const ListWorkflowResponse = Type.Array(
   })
 );
 
-const GetWorkflowResponse = Type.Object({
+export const GetWorkflowResponse = Type.Object({
   id: Type.String(),
   name: Type.String(),
   status: TemplateStatus,

@@ -9,7 +9,7 @@ export default function NodeWithToolbar({
     forceToolbarVisible: boolean;
     toolbarPosition: Position;
     label: string;
-    onDelete: () => void;
+    onDelete?: () => void;
     onOpenDetails: () => void;
   };
 }) {
@@ -27,7 +27,9 @@ export default function NodeWithToolbar({
           }}
         >
           <Button icon={<InfoCircleOutlined />} onClick={data.onOpenDetails} />
-          <Button icon={<DeleteOutlined />} onClick={data.onDelete} />
+          {data.onDelete && (
+            <Button icon={<DeleteOutlined />} onClick={data.onDelete} />
+          )}
         </div>
       </NodeToolbar>
 

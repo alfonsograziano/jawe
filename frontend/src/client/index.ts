@@ -22,6 +22,12 @@ export type TriggerDetails =
 
 export type WorkflowStep = NonNullable<WorkflowTemplate["steps"]>[number];
 
+export type WorkflowsRunsList =
+  paths["/api/v1/runs/{templateId}"]["get"]["responses"]["200"]["content"]["application/json"];
+
+export type WorkflowRunData =
+  paths["/api/v1/run/{workflowRunId}"]["get"]["responses"]["200"]["content"]["application/json"];
+
 export class Client {
   health() {
     return client.GET("/health");
@@ -87,6 +93,18 @@ export class Client {
   getTriggerById(triggerId: string) {
     return client.GET("/api/v1/trigger/{id}", {
       params: { path: { id: triggerId } },
+    });
+  }
+
+  getRunsFromTemplate(templateId: string) {
+    return client.GET("/api/v1/runs/{templateId}", {
+      params: { path: { templateId } },
+    });
+  }
+
+  getRunDetails(runId: string) {
+    return client.GET("/api/v1/run/{workflowRunId}", {
+      params: { path: { workflowRunId: runId } },
     });
   }
 }

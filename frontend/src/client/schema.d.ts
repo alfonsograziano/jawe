@@ -622,6 +622,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{templateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/run/{workflowRunId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    workflowRunId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+                            /** Format: date-time */
+                            startTime: string;
+                            /** Format: date-time */
+                            endTime?: string;
+                            stepRuns: {
+                                id: string;
+                                status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+                                output: unknown;
+                                /** Format: date-time */
+                                createdAt: string;
+                                /** Format: date-time */
+                                updatedAt: string;
+                                stepId: string;
+                                runId: string;
+                            }[];
+                            template: {
+                                id: string;
+                                name: string;
+                                status: "DRAFT" | "PUBLISHED";
+                                entryPointId?: string;
+                                steps: {
+                                    id: string;
+                                    name: string;
+                                    type: string;
+                                    inputs?: unknown;
+                                    visualizationMetadata: {
+                                        position: {
+                                            x: number;
+                                            y: number;
+                                        };
+                                        data: {
+                                            label: string;
+                                        };
+                                    };
+                                    isConfigured: boolean;
+                                }[];
+                                connections?: {
+                                    id: string;
+                                    fromStepId: string;
+                                    toStepId: string;
+                                }[];
+                                /** Format: date-time */
+                                updatedAt: string;
+                                triggers: {
+                                    id: string;
+                                    type: string;
+                                    inputs: unknown;
+                                    visualizationMetadata: {
+                                        position: {
+                                            x: number;
+                                            y: number;
+                                        };
+                                        data: {
+                                            label: string;
+                                        };
+                                    };
+                                    isConfigured: boolean;
+                                }[];
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/webhook/{*}": {
         parameters: {
             query?: never;
