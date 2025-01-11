@@ -49,6 +49,7 @@ export const getNodesAndEdgesFromTemplate = (data: WorkflowRunData) => {
 
     const node = {
       id: step.id,
+      executionRunId: stepRun?.id,
       position: metadata.position,
       type: nodeType,
       style: nodeStyleBasedOnStatus[stepStatus],
@@ -78,6 +79,7 @@ export const getNodesAndEdgesFromTemplate = (data: WorkflowRunData) => {
 
     nodes.push({
       id: trigger.id,
+      executionRunId: undefined,
       position: metadata.position,
       type: nodeType,
       style: {

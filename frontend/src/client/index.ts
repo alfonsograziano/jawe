@@ -28,6 +28,10 @@ export type WorkflowsRunsList =
 export type WorkflowRunData =
   paths["/api/v1/run/{workflowRunId}"]["get"]["responses"]["200"]["content"]["application/json"];
 
+export type WorkflowRunStepData = NonNullable<
+  WorkflowRunData["stepRuns"]
+>[number];
+
 export class Client {
   health() {
     return client.GET("/health");

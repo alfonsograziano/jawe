@@ -14,32 +14,12 @@ import {
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import BackButton from "../components/Back";
-import { Descriptions, Tag } from "antd";
-
-export const nodeStyleBasedOnStatus = {
-  PENDING: {
-    borderColor: "gray",
-    borderWidth: "1px",
-    color: "default",
-  },
-  RUNNING: {
-    borderColor: "orange",
-    borderWidth: "1.5px",
-    color: "orange",
-  },
-  COMPLETED: {
-    borderColor: "green",
-    borderWidth: "1.5px",
-    color: "green",
-  },
-  FAILED: {
-    borderColor: "red",
-    borderWidth: "2px",
-    color: "red",
-  },
-};
+import { Descriptions, Tag, Splitter } from "antd";
+import { WorkflowRunStepData } from "../client";
+import StepRunInfoDrawer from "../components/StepRunInfoDrawer";
+import { StatusTag } from "../components/StatusTag";
 
 const nodeTypes = {
   "node-with-toolbar": NodeWithToolbar,
@@ -55,6 +35,9 @@ const WorkflowRunDetailsPage = () => {
   const [edges, setEdges] = useEdgesState([]);
 
   const { runData, graphInfo } = useWorkflowRun(runId);
+  const [drawerStepInfo, setDrawerStepInfo] = useState<
+    WorkflowRunStepData | undefined
+  >();
 
   useEffect(() => {
     const { nodes: formattedNodes, edges: formattedEdges } = graphInfo;
@@ -63,7 +46,13 @@ const WorkflowRunDetailsPage = () => {
       ...node,
       data: {
         ...node.data,
-        onOpenDetails: async () => {},
+        onOpenDetails: async () => {
+          const stepRun = runData?.stepRuns.find(
+            (stepRun) => node.executionRunId === stepRun.id
+          );
+          console.log(node, stepRun);
+          setDrawerStepInfo(stepRun);
+        },
       },
     }));
     setNodes(nodesWithActions as any);
@@ -74,67 +63,77 @@ const WorkflowRunDetailsPage = () => {
 
   return (
     <div style={{ width: "100vw", height: "100vh", display: "flex" }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        defaultEdgeOptions={{
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: "#000",
-          },
-        }}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        onNodesChange={onNodesChange}
-        onEdgesChange={() => {}}
-        onConnect={() => {}}
-        onEdgesDelete={() => {}}
-      >
-        <Panel>
-          <div style={{ display: "flex", gap: 20 }}>
-            <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-              <BackButton />
-            </div>
-          </div>
-        </Panel>
-        <Controls />
-        <MiniMap />
-        <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
-      </ReactFlow>
-      {runData && (
-        <div
-          style={{
-            height: "100%",
-            width: "50%",
-            minWidth: "400px",
-          }}
-        >
-          <Descriptions
-            title="Run Details"
-            bordered
-            column={1}
-            style={{ padding: "10px" }}
+      <Splitter>
+        <Splitter.Panel defaultSize="60%" min="20%" max="70%">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            defaultEdgeOptions={{
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: "#000",
+              },
+            }}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            onNodesChange={onNodesChange}
+            onEdgesChange={() => {}}
+            onConnect={() => {}}
+            onEdgesDelete={() => {}}
           >
-            <Descriptions.Item label="Run ID">{runData.id}</Descriptions.Item>
-            <Descriptions.Item label="Start Time">
-              {new Date(runData.startTime).toLocaleString()}
-            </Descriptions.Item>
-            <Descriptions.Item label="End Time">
-              {runData.endTime
-                ? new Date(runData.endTime).toLocaleString()
-                : "N/A"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Status">
-              <Tag color={nodeStyleBasedOnStatus[runData.status].color}>
-                {runData.status}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Template Name">
-              {runData.template.name}
-            </Descriptions.Item>
-          </Descriptions>
-        </div>
+            <Panel>
+              <div style={{ display: "flex", gap: 20 }}>
+                <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
+                  <BackButton />
+                </div>
+              </div>
+            </Panel>
+            <Controls />
+            <MiniMap />
+            <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+          </ReactFlow>
+        </Splitter.Panel>
+        <Splitter.Panel>
+          {runData && (
+            <div>
+              <Descriptions
+                title="Run Details"
+                bordered
+                column={1}
+                style={{ padding: "10px" }}
+              >
+                <Descriptions.Item label="Run ID">
+                  {runData.id}
+                </Descriptions.Item>
+                <Descriptions.Item label="Start Time">
+                  {new Date(runData.startTime).toLocaleString()}
+                </Descriptions.Item>
+                <Descriptions.Item label="End Time">
+                  {runData.endTime
+                    ? new Date(runData.endTime).toLocaleString()
+                    : "N/A"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Status">
+                  <StatusTag status={runData.status} />
+                </Descriptions.Item>
+                <Descriptions.Item label="Template Name">
+                  {runData.template.name}
+                </Descriptions.Item>
+              </Descriptions>
+            </div>
+          )}
+        </Splitter.Panel>
+      </Splitter>
+
+      {drawerStepInfo && (
+        <StepRunInfoDrawer
+          onClose={() => {
+            setDrawerStepInfo(undefined);
+          }}
+          open={typeof drawerStepInfo !== "undefined"}
+          stepInfo={drawerStepInfo}
+        />
       )}
     </div>
   );

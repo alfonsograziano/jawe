@@ -11,6 +11,8 @@ import fastifyCors from "@fastify/cors";
 import { initPluginsRegistry } from "./core/pluginRegistry";
 import path from "path";
 import { fileURLToPath } from "url";
+import cron from "node-cron";
+import { runWorker } from "./core/worker";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +52,10 @@ export async function build(opts?: FastifyServerOptions) {
   app.register(healthCheck);
 
   app.register(routes, { prefix: "/api/v1" });
+
+  cron.schedule("*/10 * * * * *", () => {
+    runWorker(app.prisma);
+  });
 
   return app;
 }

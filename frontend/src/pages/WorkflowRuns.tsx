@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Table, Typography, Spin, Button } from "antd";
 import { Client, WorkflowsRunsList } from "../client";
+import { StatusTag, Status } from "../components/StatusTag";
+import BackButton from "../components/Back";
 
 const { Title } = Typography;
 
@@ -45,6 +47,7 @@ const WorkflowRunsPage = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
+      render: (status: Status) => <StatusTag status={status} />,
     },
     {
       title: "Created At",
@@ -71,6 +74,7 @@ const WorkflowRunsPage = () => {
 
   return (
     <div style={{ padding: "24px" }}>
+      <BackButton />
       <Title level={2}>Workflow Runs</Title>
       {loading ? (
         <Spin size="large" />
