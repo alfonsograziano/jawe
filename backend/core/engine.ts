@@ -10,15 +10,23 @@ type EngineConstructor = {
   runId: string;
 };
 
+const getNestedValue = (object: any, path: string): any => {
+  return path
+    .split(".")
+    .reduce((acc, key) => (acc ? acc[key] : undefined), object);
+};
+
 export class WorkflowEngine {
   workflow: WorkflowTemplate;
   repository: WorkflowRunRepository;
   runId: string;
+  stepRuns: StepRun[];
 
   constructor(context: EngineConstructor) {
     this.workflow = context.workflow;
     this.runId = context.runId;
     this.repository = context.repository;
+    this.stepRuns = [];
   }
 
   async execute() {
@@ -29,11 +37,14 @@ export class WorkflowEngine {
     const entryPoint = this.getEntryPointStep();
 
     try {
-      await this.executeStep(entryPoint);
+      const entryPointRun = await this.executeStep(entryPoint);
+      this.stepRuns.push(entryPointRun);
 
       let nextStep = this.getNextStep(entryPoint);
       while (nextStep) {
         const stepRun = await this.executeStep(nextStep);
+        this.stepRuns.push(stepRun);
+
         nextStep = this.getNextStep(nextStep, stepRun);
       }
 
@@ -136,7 +147,37 @@ export class WorkflowEngine {
 
     if (!inputs) throw new Error("Cannot find inputs in this step");
 
-    return inputs;
+    const resolvedInputs: Record<string, unknown> = {};
+
+    Object.keys(inputs).forEach((key) => {
+      if (
+        typeof inputs[key] === "object" &&
+        typeof inputs[key].inputSource === "string"
+      ) {
+        const inputSource = inputs[key].inputSource;
+        if (inputSource === "static_value")
+          resolvedInputs[key] = inputs[key].staticValue;
+        if (inputSource === "step_output") {
+          const targetStepId = inputs[key].stepDetails.stepId;
+          const stepRunFromStepId = this.stepRuns.find(
+            (stepRun) => stepRun.stepId === targetStepId
+          );
+
+          if (!stepRunFromStepId)
+            throw new Error("Cannot find stepRun id for input lookup");
+
+          const value = getNestedValue(
+            stepRunFromStepId.output,
+            inputs[key].stepDetails.outputPath
+          );
+          resolvedInputs[key] = value;
+        }
+        return;
+      }
+
+      resolvedInputs[key] = inputs[key];
+    });
+    return resolvedInputs;
   }
 
   async executePlugin(

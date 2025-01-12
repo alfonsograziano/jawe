@@ -36,6 +36,13 @@ export const Step = Type.Object({
   isConfigured: Type.Boolean(),
 });
 
+export const StepRun = Type.Object({
+  id: Type.String(),
+  stepId: Type.String(),
+  runId: Type.String(),
+  inputs: Type.Optional(Type.Any()),
+});
+
 export type Step = Static<typeof Step>;
 
 export const StepInputOnly = Type.Omit(Step, ["isConfigured"]);
