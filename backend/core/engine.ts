@@ -117,6 +117,7 @@ export class WorkflowEngine {
       this.runId,
       StepRunStatus.RUNNING
     );
+    this.stepRuns.push(stepRun);
 
     try {
       const resolvedInputs = this.resolveInputs(step.id);
