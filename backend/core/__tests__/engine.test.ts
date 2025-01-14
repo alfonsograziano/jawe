@@ -12,6 +12,7 @@ import {
   mockWTWithParallelExecution,
   mockWTWithParallelExecutionAndConvergentStep,
   mockWTWithFailureInjected,
+  mockWTWithParallelExecutionAndFaiure,
 } from "./mockData";
 import { StepRunStatus, WorkflowStatus } from "@prisma/client";
 import { initPluginsRegistry } from "../pluginRegistry";
@@ -278,5 +279,38 @@ describe("WorkflowEngine", () => {
       visualizationMetadata: expect.objectContaining({}),
     });
     expect(callsWithFalseReturn.length).toBe(1);
+  });
+
+  it("should recognize a failure in a previous step on a different branch and stop its execution immediately", async () => {
+    const repository = new WorkflowRunRepositoryMock(buildMockData());
+    const runId = "runWithParallelAndFailure";
+    const engine = new WorkflowEngine({
+      workflow: mockWTWithParallelExecutionAndFaiure,
+      repository: repository as unknown as WorkflowRunRepository,
+      runId,
+    });
+
+    await engine.execute();
+
+    expect(repository.getMockData().workflowRuns[runId].status).toBe(
+      WorkflowStatus.FAILED
+    );
+
+    expect(
+      repository.getMockData().stepRuns[createStepRunId(runId, "step1")].status
+    ).toBe(WorkflowStatus.COMPLETED);
+
+    expect(
+      repository.getMockData().stepRuns[createStepRunId(runId, "step2")].status
+    ).toBe(WorkflowStatus.FAILED);
+
+    expect(
+      repository.getMockData().stepRuns[createStepRunId(runId, "step3")].status
+    ).toBe(WorkflowStatus.COMPLETED);
+
+    // Step 4 shouldn't be executed after Step 3 as Step 2 failed
+    expect(
+      repository.getMockData().stepRuns[createStepRunId(runId, "step4")]
+    ).toBe(undefined);
   });
 });

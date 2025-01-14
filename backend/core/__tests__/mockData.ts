@@ -69,6 +69,16 @@ export const workflowRuns: Record<string, CompleteWorkflow> = {
     endTime: new Date(),
     stepRuns: [],
   },
+  runWithParallelAndFailure: {
+    id: "runWithParallelAndFailure",
+    templateId: "template1",
+    status: "PENDING",
+    createdAt: new Date(),
+    startTime: new Date(),
+    updatedAt: new Date(),
+    endTime: new Date(),
+    stepRuns: [],
+  },
 };
 
 const basicVisualizationMetadata = {
@@ -348,6 +358,60 @@ export const mockWTWithParallelExecutionAndConvergentStep: WorkflowTemplate = {
   ],
 };
 
+export const mockWTWithParallelExecutionAndFaiure: WorkflowTemplate = {
+  entryPointId: "step1",
+  name: "T1",
+  status: "PUBLISHED",
+  triggers: [
+    {
+      id: "trigger1",
+      inputs: {},
+      isConfigured: true,
+      type: "webhook",
+      visualizationMetadata: basicVisualizationMetadata,
+    },
+  ],
+  steps: [
+    {
+      id: "step1",
+      name: "Step 1",
+      inputs: {},
+      isConfigured: true,
+      type: "example-plugin",
+      visualizationMetadata: basicVisualizationMetadata,
+    },
+    {
+      id: "step2",
+      name: "Step 2",
+      inputs: {},
+      isConfigured: true,
+      type: "inject-failure",
+      visualizationMetadata: basicVisualizationMetadata,
+    },
+    {
+      id: "step3",
+      name: "Step 3",
+      inputs: {},
+      isConfigured: true,
+      type: "example-plugin",
+      visualizationMetadata: basicVisualizationMetadata,
+    },
+    {
+      id: "step4",
+      name: "Step 4",
+      inputs: {},
+      isConfigured: true,
+      type: "example-plugin",
+      visualizationMetadata: basicVisualizationMetadata,
+    },
+  ],
+  connections: [
+    { fromStepId: "step1", toStepId: "step2", id: "step1-step2-conn" },
+    { fromStepId: "step1", toStepId: "step3", id: "step1-step2-conn" },
+    { fromStepId: "step3", toStepId: "step4", id: "step3-step4-conn" },
+  ],
+};
+
 export const buildMockData = () => ({
   stepRuns: structuredClone(stepRuns),
   workflowRuns: structuredClone(workflowRuns),
@@ -363,4 +427,7 @@ export const buildMockData = () => ({
     mockWTWithParallelExecutionAndConvergentStep
   ),
   mockWTWithFailureInjected: structuredClone(mockWTWithFailureInjected),
+  mockWTWithParallelExecutionAndFaiure: structuredClone(
+    mockWTWithParallelExecutionAndFaiure
+  ),
 });
