@@ -180,3 +180,21 @@ export function validateSteps(template: any) {
     }
   });
 }
+
+export function canTemplateBePublished(template: any) {
+  try {
+    validateTemplate(template);
+  } catch (e) {
+    return false;
+  }
+
+  for (const trigger of template.triggers) {
+    if (!trigger.isConfigured) return false;
+  }
+
+  for (const step of template.steps) {
+    if (!step.isConfigured) return false;
+  }
+
+  return true;
+}

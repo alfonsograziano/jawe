@@ -204,6 +204,7 @@ export default function WorkflowTemplateDetails({
 
               {template.status === "DRAFT" && (
                 <PublishTemplateButton
+                  disabled={!template.canBePublished}
                   onConfirmPublish={async () => {
                     await publishTemplateAndShowFeedback();
                     onRefetchTemplates();

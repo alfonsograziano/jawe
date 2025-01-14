@@ -199,6 +199,8 @@ paths:
                         - inputs
                         - visualizationMetadata
                         - isConfigured
+                  canBePublished:
+                    type: boolean
                 required:
                   - id
                   - name
@@ -206,6 +208,7 @@ paths:
                   - steps
                   - updatedAt
                   - triggers
+                  - canBePublished
         "404":
           description: Default Response
           content:
@@ -860,6 +863,8 @@ paths:
                             - inputs
                             - visualizationMetadata
                             - isConfigured
+                      canBePublished:
+                        type: boolean
                     required:
                       - id
                       - name
@@ -867,6 +872,7 @@ paths:
                       - steps
                       - updatedAt
                       - triggers
+                      - canBePublished
                 required:
                   - id
                   - status

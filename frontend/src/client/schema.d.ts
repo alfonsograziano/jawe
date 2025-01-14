@@ -172,6 +172,7 @@ export interface paths {
                                 };
                                 isConfigured: boolean;
                             }[];
+                            canBePublished: boolean;
                         };
                     };
                 };
@@ -751,6 +752,7 @@ export interface paths {
                                     };
                                     isConfigured: boolean;
                                 }[];
+                                canBePublished: boolean;
                             };
                         };
                     };

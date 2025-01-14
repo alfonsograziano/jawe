@@ -151,6 +151,7 @@ export default async function workflowRun(app: FastifyInstance) {
             trigger.visualizationMetadata
           ),
         })),
+        canBePublished: false, // As in order to get a run, it has been published already
       };
 
       const formattedRun = {

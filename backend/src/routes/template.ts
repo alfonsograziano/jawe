@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { Type } from "@sinclair/typebox";
 import { Static } from "@sinclair/typebox";
 import {
+  canTemplateBePublished,
   Step,
   StepConnections,
   StepInputOnly,
@@ -76,6 +77,7 @@ export const GetWorkflowResponse = Type.Object({
   connections: Type.Optional(Type.Array(StepConnections)),
   updatedAt: Type.String({ format: "date-time" }),
   triggers: Type.Array(Trigger),
+  canBePublished: Type.Boolean(),
 });
 
 const DeleteWorkflowParams = Type.Object({
@@ -204,6 +206,7 @@ export default async function workflowTemplate(app: FastifyInstance) {
             trigger.visualizationMetadata
           ),
         })),
+        canBePublished: canTemplateBePublished(workflow),
       };
 
       return reply.status(200).send(formattedWorkflow);
@@ -477,22 +480,17 @@ export default async function workflowTemplate(app: FastifyInstance) {
           },
         });
 
-        try {
-          validateTemplate(workflowTemplate);
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error
-              ? error.message
-              : "An unexpected error occurred";
-
-          return reply.status(500).send({
-            error: errorMessage,
-          });
-        }
         if (!workflowTemplate) {
           return reply
             .status(404)
             .send({ error: "Workflow template not found." });
+        }
+
+        const canBePublished = canTemplateBePublished(workflowTemplate);
+        if (!canBePublished) {
+          return reply.status(500).send({
+            error: "Template is not correctly configured, cannot be published",
+          });
         }
 
         // Update the workflow template status to PUBLISHED

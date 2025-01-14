@@ -4,10 +4,12 @@ import { StarFilled } from "@ant-design/icons";
 
 type PublishTemplateProps = {
   onConfirmPublish: () => Promise<void>;
+  disabled: boolean;
 };
 
 const PublishTemplate: React.FC<PublishTemplateProps> = ({
   onConfirmPublish,
+  disabled,
 }) => {
   return (
     <Popover content="Publish template">
@@ -28,17 +30,11 @@ const PublishTemplate: React.FC<PublishTemplateProps> = ({
         cancelText="Cancel"
       >
         <Button
-          style={{
-            backgroundImage: "linear-gradient(120deg, blue, violet)",
-            color: "white",
-            border: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
+          type="primary"
           onClick={() => {}}
           size="large"
-          icon={<StarFilled style={{ color: "yellow" }} />}
+          icon={<StarFilled />}
+          disabled={disabled}
         >
           Publish
         </Button>
