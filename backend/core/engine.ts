@@ -4,6 +4,7 @@ import { WorkflowRunRepository } from "./workflowRunRepo";
 import { WorkflowStatus, StepRunStatus, StepRun } from "@prisma/client";
 import { pluginRegistryMap } from "./pluginRegistry";
 import { EventEmitter } from "events";
+import { getNestedValue } from "./utils";
 
 type EngineConstructor = {
   workflow: WorkflowTemplate;
@@ -11,10 +12,9 @@ type EngineConstructor = {
   runId: string;
 };
 
-const getNestedValue = (object: any, path: string): any => {
-  return path
-    .split(".")
-    .reduce((acc, key) => (acc ? acc[key] : undefined), object);
+const events = {
+  ON_COMPLETE: "onComplete",
+  ON_STEP_FAILED: "onStepFailed",
 };
 
 export class WorkflowEngine {
@@ -22,7 +22,7 @@ export class WorkflowEngine {
   repository: WorkflowRunRepository;
   runId: string;
   stepRuns: StepRun[];
-  runningSteps: Record<string, StepRun>;
+  currentlyRnningSteps: Record<string, StepRun>;
   eventEmitter: EventEmitter;
 
   constructor(context: EngineConstructor) {
@@ -30,7 +30,7 @@ export class WorkflowEngine {
     this.runId = context.runId;
     this.repository = context.repository;
     this.stepRuns = [];
-    this.runningSteps = {};
+    this.currentlyRnningSteps = {};
     this.eventEmitter = new EventEmitter();
   }
 
@@ -41,7 +41,7 @@ export class WorkflowEngine {
         WorkflowStatus.RUNNING
       );
 
-      this.eventEmitter.on("onComplete", async () => {
+      this.eventEmitter.on(events.ON_COMPLETE, async () => {
         resolve(
           this.repository.changeExecutionStatus(
             this.runId,
@@ -50,7 +50,7 @@ export class WorkflowEngine {
         );
       });
 
-      this.eventEmitter.on("onStepFailed", async () => {
+      this.eventEmitter.on(events.ON_STEP_FAILED, async () => {
         reject(
           this.repository.changeExecutionStatus(
             this.runId,
@@ -64,10 +64,7 @@ export class WorkflowEngine {
         this.executeStep(entryPoint);
       } catch (error) {
         console.log(error);
-        await this.repository.changeExecutionStatus(
-          this.runId,
-          WorkflowStatus.FAILED
-        );
+        this.eventEmitter.emit(events.ON_STEP_FAILED);
       }
     });
   }
@@ -100,8 +97,7 @@ export class WorkflowEngine {
     try {
       const resolvedInputs = this.resolveInputs(step.id);
 
-      // Add the current run to the stepsObj
-      this.runningSteps[step.id] = stepRun;
+      this.currentlyRnningSteps[step.id] = stepRun;
 
       const outputs = await this.executePlugin(stepRun, resolvedInputs);
 
@@ -111,7 +107,7 @@ export class WorkflowEngine {
         outputs
       );
 
-      delete this.runningSteps[step.id];
+      delete this.currentlyRnningSteps[step.id];
 
       // Get all the possible connections and stuff to spawn
       const stepsToExecute = this.getNextStepsToExecute(
@@ -120,12 +116,11 @@ export class WorkflowEngine {
       );
       // This path is completed
       if (!stepsToExecute) {
-        const runningSteps = Object.keys(this.runningSteps).length;
+        const runningSteps = Object.keys(this.currentlyRnningSteps).length;
         // There are no steps running anymore
         // meaning that the one just completed was the last one
         if (runningSteps === 0) {
-          this.eventEmitter.emit("onComplete");
-          return;
+          this.eventEmitter.emit(events.ON_COMPLETE);
         }
       } else {
         stepsToExecute.forEach((step) => {
@@ -139,7 +134,7 @@ export class WorkflowEngine {
         StepRunStatus.FAILED,
         {}
       );
-      this.eventEmitter.emit("onStepFailed");
+      this.eventEmitter.emit(events.ON_STEP_FAILED);
     }
   }
 
@@ -174,6 +169,21 @@ export class WorkflowEngine {
     return possibleStepsToExecute;
   }
 
+  /**
+   * Resolves the inputs for a given step in the workflow.
+   *
+   * This function processes the expected inputs of a step, resolving any reserved
+   * keywords (e.g., `inputSource`) found in the input definitions. Reserved keywords
+   * indicate references to other steps or triggers and their associated outputs.
+   * The function identifies and retrieves the referenced data to construct the resolved
+   * inputs for the step.
+   *
+   * @param {string} stepId - The ID of the step for which inputs are being resolved.
+   * @returns {Record<string, unknown>} - An object containing the resolved inputs for the step.
+   *
+   * @throws {Error} - Throws an error if inputs for the specified step cannot be found,
+   *                   or if a referenced step or trigger output is missing.
+   */
   resolveInputs(stepId: string) {
     // Assuming we only got static steps for now
     const expectedInputs = this.workflow.steps.find(
@@ -232,6 +242,17 @@ export class WorkflowEngine {
     return outputs;
   }
 
+  /**
+   * Extracts the next step in the workflow based on the output of a completed step.
+   *
+   * This function checks the output of a given `StepRun` for a `nextStepId` property,
+   * which indicates the ID of the next step to execute. If a valid `nextStepId` is found,
+   * it verifies that the step exists in the workflow. If so, it returns the corresponding
+   * step object.
+   *
+   * @param {StepRun} stepRun - The completed step run whose output may specify the next step.
+   * @returns {Step | undefined} - The next step in the workflow if found; otherwise, undefined.
+   */
   extractNextStepFromStepRun(stepRun: StepRun) {
     if (stepRun && typeof stepRun.output === "object") {
       const stepOutput = stepRun.output as JsonObject;
@@ -273,7 +294,7 @@ export class WorkflowEngine {
       .map((conn) => conn.fromStepId);
 
     // Check which parent steps are still running
-    const runningStepsIds = Object.keys(this.runningSteps);
+    const runningStepsIds = Object.keys(this.currentlyRnningSteps);
     const incomingRunningSteps = incomingStepsIds.filter((stepId) =>
       runningStepsIds.includes(stepId)
     );
