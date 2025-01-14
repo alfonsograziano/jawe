@@ -6,8 +6,7 @@ import { WorkflowRunRepository } from "../workflowRunRepo";
 import {
   mockBasicWorkflowTemplate,
   mockWorkflowTemplateWithConditionalPlugin,
-  stepRuns,
-  workflowRuns,
+  buildMockData,
 } from "./mockData";
 import { WorkflowStatus } from "@prisma/client";
 import { initPluginsRegistry } from "../pluginRegistry";
@@ -26,30 +25,35 @@ describe("WorkflowEngine", () => {
   });
 
   it("should execute a workflow successfully", async () => {
+    const repository = new WorkflowRunRepositoryMock(buildMockData());
+
     const engine = new WorkflowEngine({
       workflow: mockBasicWorkflowTemplate,
-      repository:
-        new WorkflowRunRepositoryMock() as unknown as WorkflowRunRepository,
+      repository: repository as unknown as WorkflowRunRepository,
       runId: mockRunId,
     });
 
     await engine.execute();
 
-    expect(workflowRuns[mockRunId].status).toBe(WorkflowStatus.COMPLETED);
+    expect(repository.getMockData().workflowRuns[mockRunId].status).toBe(
+      WorkflowStatus.COMPLETED
+    );
   });
 
   it("should execute a workflow with conditionals successfully", async () => {
+    const repository = new WorkflowRunRepositoryMock(buildMockData());
+
     const engine = new WorkflowEngine({
       workflow: mockWorkflowTemplateWithConditionalPlugin,
-      repository:
-        new WorkflowRunRepositoryMock() as unknown as WorkflowRunRepository,
+      repository: repository as unknown as WorkflowRunRepository,
+
       runId: "run1WithConditionals",
     });
 
     await engine.execute();
 
-    expect(workflowRuns["run1WithConditionals"].status).toBe(
-      WorkflowStatus.COMPLETED
-    );
+    expect(
+      repository.getMockData().workflowRuns["run1WithConditionals"].status
+    ).toBe(WorkflowStatus.COMPLETED);
   });
 });

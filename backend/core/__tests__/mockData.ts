@@ -123,3 +123,12 @@ export const mockWorkflowTemplateWithConditionalPlugin: WorkflowTemplate = {
     { fromStepId: "step1", toStepId: "step3", id: "step1-step3-conn" },
   ],
 };
+
+export const buildMockData = () => ({
+  stepRuns: structuredClone(stepRuns),
+  workflowRuns: structuredClone(workflowRuns),
+  mockBasicWorkflowTemplate: structuredClone(mockBasicWorkflowTemplate),
+  mockWorkflowTemplateWithConditionalPlugin: structuredClone(
+    mockWorkflowTemplateWithConditionalPlugin
+  ),
+});
