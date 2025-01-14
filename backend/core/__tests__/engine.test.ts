@@ -13,6 +13,7 @@ import {
   mockWTWithParallelExecutionAndConvergentStep,
   mockWTWithFailureInjected,
   mockWTWithParallelExecutionAndFaiure,
+  mockWorkflowTemplateWithStaticInputs,
 } from "./mockData";
 import { StepRunStatus, WorkflowStatus } from "@prisma/client";
 import { initPluginsRegistry } from "../pluginRegistry";
@@ -148,6 +149,30 @@ describe("WorkflowEngine", () => {
         createStepRunId(runId, epxectedStepToNotRun)
       ]
     ).toBe(undefined);
+  });
+
+  it("should execute a step and take the right static input as param", async () => {
+    const repository = new WorkflowRunRepositoryMock(buildMockData());
+    const runId = "run1WithInputs";
+    const engine = new WorkflowEngine({
+      workflow: mockWorkflowTemplateWithStaticInputs,
+      repository: repository as unknown as WorkflowRunRepository,
+      runId,
+    });
+
+    await engine.execute();
+
+    expect(repository.getMockData().workflowRuns[runId].status).toBe(
+      WorkflowStatus.COMPLETED
+    );
+
+    expect(
+      repository.getMockData().stepRuns[createStepRunId(runId, "step1")].status
+    ).toBe(StepRunStatus.COMPLETED);
+
+    expect(
+      repository.getMockData().stepRuns[createStepRunId(runId, "step1")].output
+    ).toEqual({ greetings: "Hello pippo" });
   });
 
   it("the run step should contain the output of the plugin", async () => {

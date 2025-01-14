@@ -412,6 +412,37 @@ export const mockWTWithParallelExecutionAndFaiure: WorkflowTemplate = {
   ],
 };
 
+export const mockWorkflowTemplateWithStaticInputs: WorkflowTemplate = {
+  entryPointId: "step1",
+  name: "T1",
+  status: "PUBLISHED",
+  triggers: [
+    {
+      id: "trigger1",
+      inputs: {},
+      isConfigured: true,
+      type: "webhook",
+      visualizationMetadata: basicVisualizationMetadata,
+    },
+  ],
+  steps: [
+    {
+      id: "step1",
+      name: "Step 1",
+      inputs: {
+        name: {
+          inputSource: "static_value",
+          staticValue: "pippo",
+        },
+      },
+      isConfigured: true,
+      type: "hello-world",
+      visualizationMetadata: basicVisualizationMetadata,
+    },
+  ],
+  connections: [],
+};
+
 export const buildMockData = () => ({
   stepRuns: structuredClone(stepRuns),
   workflowRuns: structuredClone(workflowRuns),
@@ -429,5 +460,8 @@ export const buildMockData = () => ({
   mockWTWithFailureInjected: structuredClone(mockWTWithFailureInjected),
   mockWTWithParallelExecutionAndFaiure: structuredClone(
     mockWTWithParallelExecutionAndFaiure
+  ),
+  mockWorkflowTemplateWithStaticInputs: structuredClone(
+    mockWorkflowTemplateWithStaticInputs
   ),
 });
