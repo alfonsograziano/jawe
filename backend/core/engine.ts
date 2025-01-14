@@ -22,7 +22,7 @@ export class WorkflowEngine {
   repository: WorkflowRunRepository;
   runId: string;
   stepRuns: StepRun[];
-  currentlyRnningSteps: Record<string, StepRun>;
+  currentlyRunningSteps: Record<string, StepRun>;
   eventEmitter: EventEmitter;
 
   constructor(context: EngineConstructor) {
@@ -30,7 +30,7 @@ export class WorkflowEngine {
     this.runId = context.runId;
     this.repository = context.repository;
     this.stepRuns = [];
-    this.currentlyRnningSteps = {};
+    this.currentlyRunningSteps = {};
     this.eventEmitter = new EventEmitter();
   }
 
@@ -98,7 +98,7 @@ export class WorkflowEngine {
     try {
       const resolvedInputs = this.resolveInputs(step.id);
 
-      this.currentlyRnningSteps[step.id] = stepRun;
+      this.currentlyRunningSteps[step.id] = stepRun;
 
       const outputs = await this.executePlugin(stepRun, resolvedInputs);
 
@@ -108,7 +108,7 @@ export class WorkflowEngine {
         outputs
       );
 
-      delete this.currentlyRnningSteps[step.id];
+      delete this.currentlyRunningSteps[step.id];
 
       // Get all the possible connections and stuff to spawn
       const stepsToExecute = this.getNextStepsToExecute(
@@ -117,7 +117,7 @@ export class WorkflowEngine {
       );
       // This path is completed
       if (!stepsToExecute) {
-        const runningSteps = Object.keys(this.currentlyRnningSteps).length;
+        const runningSteps = Object.keys(this.currentlyRunningSteps).length;
         // There are no steps running anymore
         // meaning that the one just completed was the last one
         if (runningSteps === 0) {
@@ -294,7 +294,7 @@ export class WorkflowEngine {
       .map((conn) => conn.fromStepId);
 
     // Check which parent steps are still running
-    const runningStepsIds = Object.keys(this.currentlyRnningSteps);
+    const runningStepsIds = Object.keys(this.currentlyRunningSteps);
     const incomingRunningSteps = incomingStepsIds.filter((stepId) =>
       runningStepsIds.includes(stepId)
     );
