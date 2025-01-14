@@ -9,6 +9,7 @@ import {
   buildMockData,
   createStepRunId,
   mockWorkflowTemplateWithInputs,
+  mockWTWithParallelExecution,
 } from "./mockData";
 import { StepRunStatus, WorkflowStatus } from "@prisma/client";
 import { initPluginsRegistry } from "../pluginRegistry";
@@ -180,5 +181,29 @@ describe("WorkflowEngine", () => {
         createStepRunId(runId, expectedStepToRun)
       ].output
     ).toEqual({ greetings: "Hello world" });
+  });
+
+  it("should execute 2 steps in parallel after the entry point", async () => {
+    const repository = new WorkflowRunRepositoryMock(buildMockData());
+    const runId = "run1Parallel";
+    const engine = new WorkflowEngine({
+      workflow: mockWTWithParallelExecution,
+      repository: repository as unknown as WorkflowRunRepository,
+      runId,
+    });
+
+    await engine.execute();
+
+    expect(repository.getMockData().workflowRuns[runId].status).toBe(
+      WorkflowStatus.COMPLETED
+    );
+
+    const expectedStepsToRun = ["step2", "step3"];
+    for (const expectedStep of expectedStepsToRun) {
+      expect(
+        repository.getMockData().stepRuns[createStepRunId(runId, expectedStep)]
+          .status
+      ).toBe(StepRunStatus.COMPLETED);
+    }
   });
 });
