@@ -51,6 +51,5 @@ describe("WorkflowEngine", () => {
     expect(workflowRuns["run1WithConditionals"].status).toBe(
       WorkflowStatus.COMPLETED
     );
-    console.log(stepRuns);
   });
 });

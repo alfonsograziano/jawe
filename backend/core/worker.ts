@@ -20,7 +20,7 @@ export const runWorker = async (prisma: PrismaClient) => {
     },
   });
 
-  pendingWorkflowRuns.forEach((workflowRun) => {
+  pendingWorkflowRuns.forEach(async (workflowRun) => {
     const { id: runId, template } = workflowRun;
 
     const engine = new WorkflowEngine({
@@ -28,6 +28,10 @@ export const runWorker = async (prisma: PrismaClient) => {
       runId,
       workflow: template as unknown as WorkflowTemplate,
     });
-    engine.execute();
+    try {
+      await engine.execute();
+    } catch (e) {
+      console.log("Workflow failed: ", workflowRun.id);
+    }
   });
 };

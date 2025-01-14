@@ -3,6 +3,7 @@ import { Step, WorkflowTemplate } from "./validateTemplate";
 import { WorkflowRunRepository } from "./workflowRunRepo";
 import { WorkflowStatus, StepRunStatus, StepRun } from "@prisma/client";
 import { pluginRegistryMap } from "./pluginRegistry";
+import { EventEmitter } from "events";
 
 type EngineConstructor = {
   workflow: WorkflowTemplate;
@@ -21,45 +22,54 @@ export class WorkflowEngine {
   repository: WorkflowRunRepository;
   runId: string;
   stepRuns: StepRun[];
+  runningSteps: Record<string, StepRun>;
+  eventEmitter: EventEmitter;
 
   constructor(context: EngineConstructor) {
     this.workflow = context.workflow;
     this.runId = context.runId;
     this.repository = context.repository;
     this.stepRuns = [];
+    this.runningSteps = {};
+    this.eventEmitter = new EventEmitter();
   }
 
   async execute() {
-    await this.repository.changeExecutionStatus(
-      this.runId,
-      WorkflowStatus.RUNNING
-    );
-    const entryPoint = this.getEntryPointStep();
+    return new Promise(async (resolve, reject) => {
+      await this.repository.changeExecutionStatus(
+        this.runId,
+        WorkflowStatus.RUNNING
+      );
 
-    try {
-      const entryPointRun = await this.executeStep(entryPoint);
-      this.stepRuns.push(entryPointRun);
+      this.eventEmitter.on("onComplete", async () => {
+        resolve(
+          this.repository.changeExecutionStatus(
+            this.runId,
+            WorkflowStatus.COMPLETED
+          )
+        );
+      });
 
-      let nextStep = this.getNextStep(entryPoint);
-      while (nextStep) {
-        const stepRun = await this.executeStep(nextStep);
-        this.stepRuns.push(stepRun);
+      this.eventEmitter.on("onStepFailed", async () => {
+        reject(
+          this.repository.changeExecutionStatus(
+            this.runId,
+            WorkflowStatus.FAILED
+          )
+        );
+      });
 
-        nextStep = this.getNextStep(nextStep, stepRun);
+      try {
+        const entryPoint = this.getEntryPointStep();
+        this.executeStep(entryPoint);
+      } catch (error) {
+        console.log(error);
+        await this.repository.changeExecutionStatus(
+          this.runId,
+          WorkflowStatus.FAILED
+        );
       }
-
-      await this.repository.changeExecutionStatus(
-        this.runId,
-        WorkflowStatus.COMPLETED
-      );
-    } catch (error) {
-      console.log(error);
-      await this.repository.changeExecutionStatus(
-        this.runId,
-        WorkflowStatus.FAILED
-      );
-      throw new Error(`Workflow execution failed: ${(error as Error).message}`);
-    }
+    });
   }
 
   getEntryPointStep() {
@@ -71,9 +81,35 @@ export class WorkflowEngine {
   }
 
   async executeStep(step: Step) {
+    const entryPoint = this.getEntryPointStep();
+    if (step.id !== entryPoint.id) {
+      // Check the running steps and the connections
+      const incomingStepsIds = this.workflow.connections
+        .filter((conn) => conn.toStepId === step.id)
+        .map((conn) => conn.fromStepId);
+      const runningStepsIds = Object.keys(this.runningSteps);
+
+      const incomingRunningSteps = incomingStepsIds.filter((stepId) =>
+        runningStepsIds.includes(stepId)
+      );
+
+      // If there are no running steps with the to with the current step
+      // This means that all the executions finished, so we can run the step now
+
+      // Otherwise, it means that other steps are still running
+      // so I need to wait for the executeStep to be caled later
+      if (incomingRunningSteps.length > 0) {
+        console.log(
+          "I need to wait, there are other steps still in pending..."
+        );
+        return;
+      }
+    }
+
     const currentStatus = await this.repository.getExecutionStatus(this.runId);
     if (currentStatus === WorkflowStatus.FAILED) {
-      throw new Error("Cannot execute step, workflow already marked as failed");
+      console.log("Cannot execute step, workflow already marked as failed");
+      return;
     }
 
     const stepRun = await this.repository.createStepRun(
@@ -85,13 +121,38 @@ export class WorkflowEngine {
     try {
       const resolvedInputs = this.resolveInputs(step.id);
 
+      // Add the current run to the stepsObj
+      this.runningSteps[step.id] = stepRun;
+
       const outputs = await this.executePlugin(stepRun, resolvedInputs);
 
-      return this.repository.updateStepRunStatus(
+      const stepRunWithOutput = await this.repository.updateStepRunStatus(
         stepRun.id,
         StepRunStatus.COMPLETED,
         outputs
       );
+
+      delete this.runningSteps[step.id];
+
+      // Get all the possible connections and stuff to spawn
+      const stepsToExecute = this.getNextStepsToExecute(
+        step,
+        stepRunWithOutput
+      );
+      // This path is completed
+      if (!stepsToExecute) {
+        const runningSteps = Object.keys(this.runningSteps).length;
+        // There are no steps running anymore
+        // meaning that the one just completed was the last one
+        if (runningSteps === 0) {
+          this.eventEmitter.emit("onComplete");
+          return;
+        }
+      } else {
+        stepsToExecute.forEach((step) => {
+          this.executeStep(step);
+        });
+      }
     } catch (error) {
       console.log(error);
       await this.repository.updateStepRunStatus(
@@ -99,11 +160,11 @@ export class WorkflowEngine {
         StepRunStatus.FAILED,
         {}
       );
-      throw new Error("Execution failed");
+      this.eventEmitter.emit("onStepFailed");
     }
   }
 
-  getNextStep(step: Step, stepRun?: StepRun) {
+  getNextStepsToExecute(step: Step, stepRun?: StepRun) {
     const connections = this.workflow.connections.filter(
       (conn) => conn.fromStepId === step.id
     );
@@ -127,16 +188,9 @@ export class WorkflowEngine {
     if (stepRun) {
       const nextStepSelectedFromPrevStep =
         this.extractNextStepFromStepRun(stepRun);
-      if (nextStepSelectedFromPrevStep) return nextStepSelectedFromPrevStep;
+      if (nextStepSelectedFromPrevStep) return [nextStepSelectedFromPrevStep];
     }
-
-    if (candidates.length === 1) return candidates[0];
-
-    // Based on the previous step output with the reserved word
-
-    // Don't manage for now the case of multiple candidates (parallel executions)
-    // TODO: Allow for multple, parallel executions
-    return candidates[0];
+    return candidates;
   }
 
   resolveInputs(stepId: string) {
