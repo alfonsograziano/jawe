@@ -81,30 +81,8 @@ export class WorkflowEngine {
   }
 
   async executeStep(step: Step) {
-    const entryPoint = this.getEntryPointStep();
-    if (step.id !== entryPoint.id) {
-      // Check the running steps and the connections
-      const incomingStepsIds = this.workflow.connections
-        .filter((conn) => conn.toStepId === step.id)
-        .map((conn) => conn.fromStepId);
-      const runningStepsIds = Object.keys(this.runningSteps);
-
-      const incomingRunningSteps = incomingStepsIds.filter((stepId) =>
-        runningStepsIds.includes(stepId)
-      );
-
-      // If there are no running steps with the to with the current step
-      // This means that all the executions finished, so we can run the step now
-
-      // Otherwise, it means that other steps are still running
-      // so I need to wait for the executeStep to be caled later
-      if (incomingRunningSteps.length > 0) {
-        console.log(
-          "I need to wait, there are other steps still in pending..."
-        );
-        return;
-      }
-    }
+    const isReadyToExecute = this.isStepReadyToExecute(step);
+    if (!isReadyToExecute) return;
 
     const currentStatus = await this.repository.getExecutionStatus(this.runId);
     if (currentStatus === WorkflowStatus.FAILED) {
@@ -165,14 +143,14 @@ export class WorkflowEngine {
     }
   }
 
-  getNextStepsToExecute(step: Step, stepRun?: StepRun) {
-    const connections = this.workflow.connections.filter(
-      (conn) => conn.fromStepId === step.id
+  getNextStepsToExecute(previousStep: Step, stepRun?: StepRun) {
+    const incomingConnections = this.workflow.connections.filter(
+      (conn) => conn.fromStepId === previousStep.id
     );
 
-    if (!connections) return undefined;
+    if (!incomingConnections) return undefined;
 
-    const candidates = connections.map((connection) => {
+    const possibleStepsToExecute = incomingConnections.map((connection) => {
       const candidateStep = this.workflow.steps.find(
         (step) => connection.toStepId === step.id
       );
@@ -182,38 +160,40 @@ export class WorkflowEngine {
       return candidateStep;
     });
 
-    // We're in one of the end nodes
-    if (candidates.length === 0) return undefined;
+    // We're in one of the end (leaf) nodes
+    if (possibleStepsToExecute.length === 0) return undefined;
 
-    // If the output of the lates step contains
+    // If the output of the lates step contains a nextStepId preference
+    // This is needed for example in the case of a conditional
     if (stepRun) {
       const nextStepSelectedFromPrevStep =
         this.extractNextStepFromStepRun(stepRun);
       if (nextStepSelectedFromPrevStep) return [nextStepSelectedFromPrevStep];
     }
-    return candidates;
+
+    return possibleStepsToExecute;
   }
 
   resolveInputs(stepId: string) {
     // Assuming we only got static steps for now
-    const inputs = this.workflow.steps.find(
+    const expectedInputs = this.workflow.steps.find(
       (step) => step.id === stepId
     )?.inputs;
 
-    if (!inputs) throw new Error("Cannot find inputs in this step");
+    if (!expectedInputs) throw new Error("Cannot find inputs in this step");
 
     const resolvedInputs: Record<string, unknown> = {};
 
-    Object.keys(inputs).forEach((key) => {
+    Object.keys(expectedInputs).forEach((key) => {
       if (
-        typeof inputs[key] === "object" &&
-        typeof inputs[key].inputSource === "string"
+        typeof expectedInputs[key] === "object" &&
+        typeof expectedInputs[key].inputSource === "string"
       ) {
-        const inputSource = inputs[key].inputSource;
+        const inputSource = expectedInputs[key].inputSource;
         if (inputSource === "static_value")
-          resolvedInputs[key] = inputs[key].staticValue;
+          resolvedInputs[key] = expectedInputs[key].staticValue;
         if (inputSource === "step_output") {
-          const targetStepId = inputs[key].stepDetails.stepId;
+          const targetStepId = expectedInputs[key].stepDetails.stepId;
           const stepRunFromStepId = this.stepRuns.find(
             (stepRun) => stepRun.stepId === targetStepId
           );
@@ -223,14 +203,15 @@ export class WorkflowEngine {
 
           const value = getNestedValue(
             stepRunFromStepId.output,
-            inputs[key].stepDetails.outputPath
+            expectedInputs[key].stepDetails.outputPath
           );
           resolvedInputs[key] = value;
         }
         return;
       }
 
-      resolvedInputs[key] = inputs[key];
+      // If there is no inputSource specified fallback to a base input resolution
+      resolvedInputs[key] = expectedInputs[key];
     });
     return resolvedInputs;
   }
@@ -239,7 +220,6 @@ export class WorkflowEngine {
     stepRun: StepRun,
     resolvedInputs: Record<string, unknown>
   ) {
-    // Simulate the execution of the plugin and return mock outputs
     const step = this.workflow.steps.find((step) => step.id === stepRun.stepId);
     if (!step) throw new Error("Cannot find the related step");
 
@@ -262,5 +242,43 @@ export class WorkflowEngine {
         if (candidateSelectedByPrevStep) return candidateSelectedByPrevStep;
       }
     }
+  }
+
+  /**
+   * Determines if a step in the workflow is ready to execute.
+   *
+   * In a Directed Acyclic Graph (DAG)-based workflow, a step (or node)
+   * can only be executed when all its parent steps (branches that converge
+   * into the node) have completed execution. This function checks if all
+   * parent steps of the given step are completed and ensures that no
+   * parent steps are still running.
+   *
+   * @param {Object} step - The step object representing the current node in the workflow.
+   *                        Must contain a unique `id` property.
+   * @returns {boolean} - Returns `true` if the step is ready to execute (all parent
+   *                      steps are completed), otherwise `false`.
+   *
+   */
+  isStepReadyToExecute(step: Step) {
+    const entryPoint = this.getEntryPointStep();
+
+    // Entry point step is always ready to execute
+    if (step.id === entryPoint.id) {
+      return true;
+    }
+
+    // Find all parent steps (steps with connections leading to the current step)
+    const incomingStepsIds = this.workflow.connections
+      .filter((conn) => conn.toStepId === step.id)
+      .map((conn) => conn.fromStepId);
+
+    // Check which parent steps are still running
+    const runningStepsIds = Object.keys(this.runningSteps);
+    const incomingRunningSteps = incomingStepsIds.filter((stepId) =>
+      runningStepsIds.includes(stepId)
+    );
+
+    // Step is ready to execute only if none of the parent steps are still running
+    return incomingRunningSteps.length === 0;
   }
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "vitest";
 import "../workflowRunRepo";
 import { WorkflowRunRepositoryMock } from "./workflowRunRepositoryMock";
 import { WorkflowEngine } from "../engine";
@@ -10,6 +10,7 @@ import {
   createStepRunId,
   mockWorkflowTemplateWithInputs,
   mockWTWithParallelExecution,
+  mockWTWithParallelExecutionAndConvergentStep,
 } from "./mockData";
 import { StepRunStatus, WorkflowStatus } from "@prisma/client";
 import { initPluginsRegistry } from "../pluginRegistry";
@@ -205,5 +206,51 @@ describe("WorkflowEngine", () => {
           .status
       ).toBe(StepRunStatus.COMPLETED);
     }
+  });
+
+  it("should wait to execute a step until all converging steps are done", async () => {
+    const repository = new WorkflowRunRepositoryMock(buildMockData());
+    const runId = "run2Parallel";
+    const engine = new WorkflowEngine({
+      workflow: mockWTWithParallelExecutionAndConvergentStep,
+      repository: repository as unknown as WorkflowRunRepository,
+      runId,
+    });
+
+    const spy = vi.spyOn(engine, "isStepReadyToExecute");
+    await engine.execute();
+
+    expect(repository.getMockData().workflowRuns[runId].status).toBe(
+      WorkflowStatus.COMPLETED
+    );
+
+    const expectedStepsToRun = ["step2", "step3", "step4"];
+    for (const expectedStep of expectedStepsToRun) {
+      expect(
+        repository.getMockData().stepRuns[createStepRunId(runId, expectedStep)]
+          .status
+      ).toBe(StepRunStatus.COMPLETED);
+    }
+
+    // When I'm executing it with the fastest step, I want it to return false
+    // As we still have another step running in parallel
+    const callsWithFalseReturn = spy.mock.calls.filter((_, index) => {
+      return (
+        spy.mock.results[index].type === "return" &&
+        spy.mock.results[index].value === false
+      );
+    });
+
+    // I should get false when I try to call the last step
+    // As it gets called twice and the first time the other one is still occupied
+    expect(callsWithFalseReturn[0][0]).toEqual({
+      id: "step4",
+      name: "Step 4",
+      inputs: {},
+      isConfigured: true,
+      type: "example-plugin",
+      visualizationMetadata: expect.objectContaining({}),
+    });
+    expect(callsWithFalseReturn.length).toBe(1);
   });
 });
