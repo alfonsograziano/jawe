@@ -35,35 +35,36 @@ export class WorkflowEngine {
   }
 
   async execute() {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
       await this.repository.changeExecutionStatus(
         this.runId,
         WorkflowStatus.RUNNING
       );
 
       this.eventEmitter.on(events.ON_COMPLETE, async () => {
-        resolve(
-          this.repository.changeExecutionStatus(
-            this.runId,
-            WorkflowStatus.COMPLETED
-          )
+        await this.repository.changeExecutionStatus(
+          this.runId,
+          WorkflowStatus.COMPLETED
         );
+        resolve({
+          success: true,
+        });
       });
 
       this.eventEmitter.on(events.ON_STEP_FAILED, async () => {
-        reject(
-          this.repository.changeExecutionStatus(
-            this.runId,
-            WorkflowStatus.FAILED
-          )
+        await this.repository.changeExecutionStatus(
+          this.runId,
+          WorkflowStatus.FAILED
         );
+        resolve({
+          success: false,
+        });
       });
 
       try {
         const entryPoint = this.getEntryPointStep();
         this.executeStep(entryPoint);
       } catch (error) {
-        console.log(error);
         this.eventEmitter.emit(events.ON_STEP_FAILED);
       }
     });
@@ -82,8 +83,8 @@ export class WorkflowEngine {
     if (!isReadyToExecute) return;
 
     const currentStatus = await this.repository.getExecutionStatus(this.runId);
+    // Cannot execute step, workflow already marked as failed
     if (currentStatus === WorkflowStatus.FAILED) {
-      console.log("Cannot execute step, workflow already marked as failed");
       return;
     }
 
@@ -128,7 +129,6 @@ export class WorkflowEngine {
         });
       }
     } catch (error) {
-      console.log(error);
       await this.repository.updateStepRunStatus(
         stepRun.id,
         StepRunStatus.FAILED,

@@ -11,6 +11,7 @@ import {
   mockWorkflowTemplateWithInputs,
   mockWTWithParallelExecution,
   mockWTWithParallelExecutionAndConvergentStep,
+  mockWTWithFailureInjected,
 } from "./mockData";
 import { StepRunStatus, WorkflowStatus } from "@prisma/client";
 import { initPluginsRegistry } from "../pluginRegistry";
@@ -42,6 +43,31 @@ describe("WorkflowEngine", () => {
     expect(repository.getMockData().workflowRuns[mockRunId].status).toBe(
       WorkflowStatus.COMPLETED
     );
+  });
+
+  it("workflow should fail if a plugin fails", async () => {
+    const repository = new WorkflowRunRepositoryMock(buildMockData());
+    const runId = "runWithFailureInjection";
+    const engine = new WorkflowEngine({
+      workflow: mockWTWithFailureInjected,
+      repository: repository as unknown as WorkflowRunRepository,
+      runId,
+    });
+
+    await engine.execute();
+
+    expect(repository.getMockData().workflowRuns[runId].status).toBe(
+      WorkflowStatus.FAILED
+    );
+
+    expect(
+      repository.getMockData().stepRuns[createStepRunId(runId, "step1")].status
+    ).toBe(WorkflowStatus.FAILED);
+
+    // Step 2 shouldn't be reached as Step 1 failed
+    expect(
+      repository.getMockData().stepRuns[createStepRunId(runId, "step2")]
+    ).toBe(undefined);
   });
 
   it("should execute a workflow with conditionals successfully", async () => {
