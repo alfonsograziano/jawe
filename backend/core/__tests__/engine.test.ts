@@ -3,18 +3,7 @@ import "../workflowRunRepo";
 import { WorkflowRunRepositoryMock } from "./workflowRunRepositoryMock";
 import { WorkflowEngine } from "../engine";
 import { WorkflowRunRepository } from "../workflowRunRepo";
-import {
-  mockBasicWorkflowTemplate,
-  mockWorkflowTemplateWithConditionalPlugin,
-  buildMockData,
-  createStepRunId,
-  mockWorkflowTemplateWithInputs,
-  mockWTWithParallelExecution,
-  mockWTWithParallelExecutionAndConvergentStep,
-  mockWTWithFailureInjected,
-  mockWTWithParallelExecutionAndFaiure,
-  mockWorkflowTemplateWithStaticInputs,
-} from "./mockData";
+import { buildMockData, createStepRunId } from "./mockData";
 import { StepRunStatus, WorkflowStatus } from "@prisma/client";
 import { initPluginsRegistry } from "../pluginRegistry";
 import path from "path";
@@ -35,7 +24,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
 
     const engine = new WorkflowEngine({
-      workflow: mockBasicWorkflowTemplate,
+      workflow: buildMockData().mockBasicWorkflowTemplate,
       repository: repository as unknown as WorkflowRunRepository,
       runId: mockRunId,
     });
@@ -51,7 +40,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "runWithFailureInjection";
     const engine = new WorkflowEngine({
-      workflow: mockWTWithFailureInjected,
+      workflow: buildMockData().mockWTWithFailureInjected,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
     });
@@ -76,7 +65,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
 
     const engine = new WorkflowEngine({
-      workflow: mockWorkflowTemplateWithConditionalPlugin,
+      workflow: buildMockData().mockWorkflowTemplateWithConditionalPlugin,
       repository: repository as unknown as WorkflowRunRepository,
 
       runId: "run1WithConditionals",
@@ -93,7 +82,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "run1WithConditionals";
     const engine = new WorkflowEngine({
-      workflow: mockWorkflowTemplateWithConditionalPlugin,
+      workflow: buildMockData().mockWorkflowTemplateWithConditionalPlugin,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
     });
@@ -124,7 +113,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "run1WithConditionals";
     const engine = new WorkflowEngine({
-      workflow: mockWorkflowTemplateWithConditionalPlugin,
+      workflow: buildMockData().mockWorkflowTemplateWithConditionalPlugin,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
     });
@@ -155,7 +144,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "run1WithInputs";
     const engine = new WorkflowEngine({
-      workflow: mockWorkflowTemplateWithStaticInputs,
+      workflow: buildMockData().mockWorkflowTemplateWithStaticInputs,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
     });
@@ -179,7 +168,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "run1WithInputs";
     const engine = new WorkflowEngine({
-      workflow: mockWorkflowTemplateWithInputs,
+      workflow: buildMockData().mockWorkflowTemplateWithInputs,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
     });
@@ -209,7 +198,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "run1WithInputs";
     const engine = new WorkflowEngine({
-      workflow: mockWorkflowTemplateWithInputs,
+      workflow: buildMockData().mockWorkflowTemplateWithInputs,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
     });
@@ -240,7 +229,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "run1Parallel";
     const engine = new WorkflowEngine({
-      workflow: mockWTWithParallelExecution,
+      workflow: buildMockData().mockWTWithParallelExecution,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
     });
@@ -264,7 +253,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "run2Parallel";
     const engine = new WorkflowEngine({
-      workflow: mockWTWithParallelExecutionAndConvergentStep,
+      workflow: buildMockData().mockWTWithParallelExecutionAndConvergentStep,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
     });
@@ -310,7 +299,7 @@ describe("WorkflowEngine", () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "runWithParallelAndFailure";
     const engine = new WorkflowEngine({
-      workflow: mockWTWithParallelExecutionAndFaiure,
+      workflow: buildMockData().mockWTWithParallelExecutionAndFaiure,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
     });
