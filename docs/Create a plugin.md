@@ -22,7 +22,7 @@ Each plugin must:
 
 Below is a complete example of a simple plugin called "Hello World."
 
-```
+```typescript
 import { BasePlugin } from "../../core/basePlugin";
 import { Type, Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
