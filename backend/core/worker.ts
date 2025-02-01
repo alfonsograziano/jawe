@@ -17,16 +17,21 @@ export const runWorker = async (prisma: PrismaClient) => {
           triggers: true,
         },
       },
+      triggerRun: true,
     },
   });
 
   pendingWorkflowRuns.forEach(async (workflowRun) => {
-    const { id: runId, template } = workflowRun;
+    const { id: runId, template, triggerRun } = workflowRun;
 
     const engine = new WorkflowEngine({
       repository,
-      runId,
       workflow: template as unknown as WorkflowTemplate,
+      workflowRun: {
+        id: runId,
+        triggerRun,
+        stepRuns: [],
+      },
     });
     try {
       await engine.execute();
