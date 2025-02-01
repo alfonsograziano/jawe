@@ -40,10 +40,9 @@ export function enhanceFieldSchemaWithInputSource(fieldSchema: any) {
                 triggerDetails: {
                   type: "object",
                   properties: {
-                    triggerId: { type: "string", minLength: 1 },
                     outputPath: { type: "string", minLength: 1 },
                   },
-                  required: ["triggerId", "outputPath"],
+                  required: ["outputPath"],
                 },
               },
               required: ["triggerDetails"],
