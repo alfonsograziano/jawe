@@ -11,11 +11,16 @@ import { pluginRegistryMap } from "./pluginRegistry";
 import { EventEmitter } from "events";
 import { resolveDynamicInputs } from "./utils/resolveDynamicFields";
 
+type WorkflowRun = {
+  id: string;
+  triggerRun: TriggerRun;
+  stepRuns: StepRun[];
+};
+
 type EngineConstructor = {
   workflow: WorkflowTemplate;
   repository: WorkflowRunRepository;
-  runId: string;
-  triggerRun: TriggerRun;
+  workflowRun: WorkflowRun;
 };
 
 const events = {
@@ -26,33 +31,28 @@ const events = {
 export class WorkflowEngine {
   workflow: WorkflowTemplate;
   repository: WorkflowRunRepository;
-  runId: string;
-  stepRuns: StepRun[];
   currentlyRunningSteps: Record<string, StepRun>;
-  // TODO: Refactor this at some point to pass the workflowRun instead of runIf and triggerRun
-  triggerRun: TriggerRun;
   eventEmitter: EventEmitter;
+  workflowRun: WorkflowRun;
 
   constructor(context: EngineConstructor) {
     this.workflow = context.workflow;
-    this.runId = context.runId;
     this.repository = context.repository;
-    this.stepRuns = [];
     this.currentlyRunningSteps = {};
     this.eventEmitter = new EventEmitter();
-    this.triggerRun = context.triggerRun;
+    this.workflowRun = context.workflowRun;
   }
 
   async execute() {
     return new Promise(async (resolve) => {
       await this.repository.changeExecutionStatus(
-        this.runId,
+        this.workflowRun.id,
         WorkflowStatus.RUNNING
       );
 
       this.eventEmitter.on(events.ON_COMPLETE, async () => {
         await this.repository.changeExecutionStatus(
-          this.runId,
+          this.workflowRun.id,
           WorkflowStatus.COMPLETED
         );
         resolve({
@@ -62,7 +62,7 @@ export class WorkflowEngine {
 
       this.eventEmitter.on(events.ON_STEP_FAILED, async () => {
         await this.repository.changeExecutionStatus(
-          this.runId,
+          this.workflowRun.id,
           WorkflowStatus.FAILED
         );
         resolve({
@@ -91,7 +91,9 @@ export class WorkflowEngine {
     const isReadyToExecute = this.isStepReadyToExecute(step);
     if (!isReadyToExecute) return;
 
-    const currentStatus = await this.repository.getExecutionStatus(this.runId);
+    const currentStatus = await this.repository.getExecutionStatus(
+      this.workflowRun.id
+    );
     // Cannot execute step, workflow already marked as failed
     if (currentStatus === WorkflowStatus.FAILED) {
       return;
@@ -99,10 +101,10 @@ export class WorkflowEngine {
 
     const stepRun = await this.repository.createStepRun(
       step.id,
-      this.runId,
+      this.workflowRun.id,
       StepRunStatus.RUNNING
     );
-    this.stepRuns.push(stepRun);
+    this.workflowRun.stepRuns.push(stepRun);
 
     try {
       const resolvedInputs = this.resolveInputs(step.id);
@@ -110,7 +112,9 @@ export class WorkflowEngine {
       this.currentlyRunningSteps[step.id] = stepRun;
 
       const outputs = await this.executePlugin(stepRun, resolvedInputs);
-      const localRun = this.stepRuns.find((run) => run.id === stepRun.id);
+      const localRun = this.workflowRun.stepRuns.find(
+        (run) => run.id === stepRun.id
+      );
       if (!localRun) throw new Error("Cannot find local run");
       // Updating local run with the generated outputs
       // So that can be used as input for a next step
@@ -205,7 +209,11 @@ export class WorkflowEngine {
     )?.inputs;
 
     if (!expectedInputs) throw new Error("Cannot find inputs in this step");
-    return resolveDynamicInputs(expectedInputs, this.stepRuns, this.triggerRun);
+    return resolveDynamicInputs(
+      expectedInputs,
+      this.workflowRun.stepRuns,
+      this.workflowRun.triggerRun
+    );
   }
 
   async executePlugin(

@@ -1,4 +1,4 @@
-import { StepRun, WorkflowRun } from "@prisma/client";
+import { StepRun, WorkflowRun, TriggerRun } from "@prisma/client";
 import { WorkflowTemplate } from "../validateTemplate";
 
 type CompleteWorkflow = WorkflowRun & { stepRuns: StepRun[] };
@@ -512,6 +512,22 @@ export const mockWorkflowTemplateWithStaticInputs: WorkflowTemplate = {
     },
   ],
   connections: [],
+};
+
+export const buildWorkflowRun = ({
+  runId,
+  triggerRun,
+  stepRuns,
+}: {
+  runId: string;
+  triggerRun: TriggerRun;
+  stepRuns?: StepRun[];
+}) => {
+  return {
+    id: runId,
+    triggerRun,
+    stepRuns: stepRuns || [],
+  };
 };
 
 export const buildMockData = () => ({
