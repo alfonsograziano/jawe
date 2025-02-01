@@ -888,7 +888,6 @@ paths:
                 required:
                   - id
                   - status
-                  - startTime
                   - stepRuns
                   - triggerRun
                   - template

@@ -36,7 +36,6 @@ class CronTriggerManager {
             triggerRunId: triggerRun.id,
             templateId: triggerRun.trigger.workflowTemplateId,
             status: "PENDING",
-            startTime: new Date(),
           },
         });
       },

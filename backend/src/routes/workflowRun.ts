@@ -38,7 +38,7 @@ const WorkflowRunsResponse = Type.Array(
 const WorkflowRunDetailsResponse = Type.Object({
   id: Type.String(),
   status: RunStatus,
-  startTime: Type.String({ format: "date-time" }),
+  startTime: Type.Optional(Type.String({ format: "date-time" })),
   endTime: Type.Optional(Type.String({ format: "date-time" })),
   stepRuns: Type.Array(
     Type.Object({
@@ -163,7 +163,7 @@ export default async function workflowRun(app: FastifyInstance) {
       const formattedRun = {
         ...run,
         endTime: run.endTime ? run.endTime.toISOString() : undefined,
-        startTime: run.startTime.toISOString(),
+        startTime: run.startTime ? run.startTime.toISOString() : undefined,
         stepRuns: run.stepRuns.map((step) => ({
           ...step,
           createdAt: step.createdAt.toISOString(),

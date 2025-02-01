@@ -34,7 +34,19 @@ export const runWorker = async (prisma: PrismaClient) => {
       },
     });
     try {
+      await prisma.workflowRun.update({
+        where: { id: runId },
+        data: {
+          startTime: new Date(),
+        },
+      });
       await engine.execute();
+      await prisma.workflowRun.update({
+        where: { id: runId },
+        data: {
+          endTime: new Date(),
+        },
+      });
     } catch (e) {
       console.log("Workflow failed: ", workflowRun.id);
     }
