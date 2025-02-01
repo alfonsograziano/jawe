@@ -1,7 +1,12 @@
 import { JsonObject } from "@prisma/client/runtime/library";
 import { Step, WorkflowTemplate } from "./validateTemplate";
 import { WorkflowRunRepository } from "./workflowRunRepo";
-import { WorkflowStatus, StepRunStatus, StepRun } from "@prisma/client";
+import {
+  WorkflowStatus,
+  StepRunStatus,
+  StepRun,
+  TriggerRun,
+} from "@prisma/client";
 import { pluginRegistryMap } from "./pluginRegistry";
 import { EventEmitter } from "events";
 import { getNestedValue } from "./utils";
@@ -10,11 +15,58 @@ type EngineConstructor = {
   workflow: WorkflowTemplate;
   repository: WorkflowRunRepository;
   runId: string;
+  triggerRun: TriggerRun;
 };
 
 const events = {
   ON_COMPLETE: "onComplete",
   ON_STEP_FAILED: "onStepFailed",
+};
+
+const resolveValueFromObj = (
+  obj: any,
+  stepRuns: StepRun[],
+  triggerRun: TriggerRun
+): any => {
+  if (typeof obj !== "object" && !Array.isArray(obj)) return obj;
+
+  if (typeof obj === "object" && typeof obj.inputSource === "string") {
+    const inputSource = obj.inputSource;
+    if (inputSource === "static_value") return obj.staticValue;
+
+    if (inputSource === "step_output") {
+      const targetStepId = obj.stepDetails.stepId;
+      const stepRunFromStepId = stepRuns.find(
+        (stepRun) => stepRun.stepId === targetStepId
+      );
+
+      if (!stepRunFromStepId)
+        throw new Error("Cannot find stepRun id for input lookup");
+
+      return getNestedValue(
+        stepRunFromStepId.output,
+        obj.stepDetails.outputPath
+      );
+    }
+
+    if (inputSource === "trigger_output") {
+      return getNestedValue(triggerRun.output, obj.triggerDetails.outputPath);
+    }
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => resolveValueFromObj(item, stepRuns, triggerRun));
+  }
+
+  if (typeof obj === "object") {
+    const resolvedInputs: Record<string, unknown> = {};
+    Object.keys(obj).forEach((key) => {
+      resolvedInputs[key] = resolveValueFromObj(obj[key], stepRuns, triggerRun);
+    });
+    return resolvedInputs;
+  }
+
+  return obj;
 };
 
 export class WorkflowEngine {
@@ -23,6 +75,8 @@ export class WorkflowEngine {
   runId: string;
   stepRuns: StepRun[];
   currentlyRunningSteps: Record<string, StepRun>;
+  // TODO: Refactor this at some point to pass the workflowRun instead of runIf and triggerRun
+  triggerRun: TriggerRun;
   eventEmitter: EventEmitter;
 
   constructor(context: EngineConstructor) {
@@ -32,6 +86,7 @@ export class WorkflowEngine {
     this.stepRuns = [];
     this.currentlyRunningSteps = {};
     this.eventEmitter = new EventEmitter();
+    this.triggerRun = context.triggerRun;
   }
 
   async execute() {
@@ -101,6 +156,11 @@ export class WorkflowEngine {
       this.currentlyRunningSteps[step.id] = stepRun;
 
       const outputs = await this.executePlugin(stepRun, resolvedInputs);
+      const localRun = this.stepRuns.find((run) => run.id === stepRun.id);
+      if (!localRun) throw new Error("Cannot find local run");
+      // Updating local run with the generated outputs
+      // So that can be used as input for a next step
+      localRun.output = outputs;
 
       const stepRunWithOutput = await this.repository.updateStepRunStatus(
         stepRun.id,
@@ -191,39 +251,7 @@ export class WorkflowEngine {
     )?.inputs;
 
     if (!expectedInputs) throw new Error("Cannot find inputs in this step");
-
-    const resolvedInputs: Record<string, unknown> = {};
-
-    Object.keys(expectedInputs).forEach((key) => {
-      if (
-        typeof expectedInputs[key] === "object" &&
-        typeof expectedInputs[key].inputSource === "string"
-      ) {
-        const inputSource = expectedInputs[key].inputSource;
-        if (inputSource === "static_value")
-          resolvedInputs[key] = expectedInputs[key].staticValue;
-        if (inputSource === "step_output") {
-          const targetStepId = expectedInputs[key].stepDetails.stepId;
-          const stepRunFromStepId = this.stepRuns.find(
-            (stepRun) => stepRun.stepId === targetStepId
-          );
-
-          if (!stepRunFromStepId)
-            throw new Error("Cannot find stepRun id for input lookup");
-
-          const value = getNestedValue(
-            stepRunFromStepId.output,
-            expectedInputs[key].stepDetails.outputPath
-          );
-          resolvedInputs[key] = value;
-        }
-        return;
-      }
-
-      // If there is no inputSource specified fallback to a base input resolution
-      resolvedInputs[key] = expectedInputs[key];
-    });
-    return resolvedInputs;
+    return resolveValueFromObj(expectedInputs, this.stepRuns, this.triggerRun);
   }
 
   async executePlugin(

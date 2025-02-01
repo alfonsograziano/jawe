@@ -3,7 +3,12 @@ import "../workflowRunRepo";
 import { WorkflowRunRepositoryMock } from "./workflowRunRepositoryMock";
 import { WorkflowEngine } from "../engine";
 import { WorkflowRunRepository } from "../workflowRunRepo";
-import { buildMockData, createStepRunId } from "./mockData";
+import {
+  buildMockData,
+  createStepRunId,
+  baseTriggerRun,
+  triggerRunWithOutputs,
+} from "./mockData";
 import { StepRunStatus, WorkflowStatus } from "@prisma/client";
 import { initPluginsRegistry } from "../pluginRegistry";
 import path from "path";
@@ -27,6 +32,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockBasicWorkflowTemplate,
       repository: repository as unknown as WorkflowRunRepository,
       runId: mockRunId,
+      triggerRun: baseTriggerRun,
     });
 
     await engine.execute();
@@ -36,6 +42,8 @@ describe("WorkflowEngine", () => {
     );
   });
 
+  //TODO: Add more tests for resolve inputs with nested values
+
   it("workflow should fail if a plugin fails", async () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "runWithFailureInjection";
@@ -43,6 +51,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockWTWithFailureInjected,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
+      triggerRun: baseTriggerRun,
     });
 
     await engine.execute();
@@ -68,6 +77,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockWorkflowTemplateWithConditionalPlugin,
       repository: repository as unknown as WorkflowRunRepository,
 
+      triggerRun: baseTriggerRun,
       runId: "run1WithConditionals",
     });
 
@@ -85,6 +95,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockWorkflowTemplateWithConditionalPlugin,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
+      triggerRun: baseTriggerRun,
     });
 
     await engine.execute();
@@ -116,6 +127,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockWorkflowTemplateWithConditionalPlugin,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
+      triggerRun: baseTriggerRun,
     });
 
     await engine.execute();
@@ -147,6 +159,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockWorkflowTemplateWithStaticInputs,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
+      triggerRun: baseTriggerRun,
     });
 
     await engine.execute();
@@ -171,6 +184,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockWorkflowTemplateWithInputs,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
+      triggerRun: baseTriggerRun,
     });
 
     await engine.execute();
@@ -201,6 +215,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockWorkflowTemplateWithInputs,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
+      triggerRun: baseTriggerRun,
     });
 
     await engine.execute();
@@ -232,6 +247,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockWTWithParallelExecution,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
+      triggerRun: baseTriggerRun,
     });
 
     await engine.execute();
@@ -256,6 +272,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockWTWithParallelExecutionAndConvergentStep,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
+      triggerRun: baseTriggerRun,
     });
 
     const spy = vi.spyOn(engine, "isStepReadyToExecute");
@@ -302,6 +319,7 @@ describe("WorkflowEngine", () => {
       workflow: buildMockData().mockWTWithParallelExecutionAndFaiure,
       repository: repository as unknown as WorkflowRunRepository,
       runId,
+      triggerRun: baseTriggerRun,
     });
 
     await engine.execute();
@@ -326,5 +344,26 @@ describe("WorkflowEngine", () => {
     expect(
       repository.getMockData().stepRuns[createStepRunId(runId, "step4")]
     ).toBe(undefined);
+  });
+
+  it("should load the input from a trigger", async () => {
+    const repository = new WorkflowRunRepositoryMock(buildMockData());
+    const runId = "runWithInputTrigger";
+    const engine = new WorkflowEngine({
+      workflow: buildMockData().mockWTWithInputFromTrigger,
+      repository: repository as unknown as WorkflowRunRepository,
+      runId,
+      triggerRun: triggerRunWithOutputs,
+    });
+
+    await engine.execute();
+
+    expect(repository.getMockData().workflowRuns[runId].status).toBe(
+      WorkflowStatus.COMPLETED
+    );
+
+    expect(
+      repository.getMockData().stepRuns[createStepRunId(runId, "step1")].output
+    ).toEqual({ greetings: "Hello bar" });
   });
 });

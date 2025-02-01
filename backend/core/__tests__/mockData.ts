@@ -8,9 +8,30 @@ export const createStepRunId = (runId: string, stepId: string) =>
 
 export const stepRuns: Record<string, StepRun> = {};
 
+export const baseTriggerRun = {
+  id: "base-trigger-run-with-empty-output",
+  output: {},
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  triggerId: "fake-trigger-id",
+  workflowRunId: null,
+};
+
+export const triggerRunWithOutputs = {
+  id: "rigger-run-with-output",
+  output: {
+    foo: "bar",
+  },
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  triggerId: "fake-trigger-id",
+  workflowRunId: null,
+};
+
 export const workflowRuns: Record<string, CompleteWorkflow> = {
   run1: {
     id: "run1",
+    triggerRunId: baseTriggerRun.id,
     templateId: "template1",
     status: "PENDING",
     createdAt: new Date(),
@@ -21,6 +42,7 @@ export const workflowRuns: Record<string, CompleteWorkflow> = {
   },
   run1WithConditionals: {
     id: "run1WithConditionals",
+    triggerRunId: baseTriggerRun.id,
     templateId: "template1",
     status: "PENDING",
     createdAt: new Date(),
@@ -31,6 +53,7 @@ export const workflowRuns: Record<string, CompleteWorkflow> = {
   },
   run1WithInputs: {
     id: "run1WithInputs",
+    triggerRunId: baseTriggerRun.id,
     templateId: "template1",
     status: "PENDING",
     createdAt: new Date(),
@@ -41,6 +64,7 @@ export const workflowRuns: Record<string, CompleteWorkflow> = {
   },
   run1Parallel: {
     id: "run1Parallel",
+    triggerRunId: baseTriggerRun.id,
     templateId: "template1",
     status: "PENDING",
     createdAt: new Date(),
@@ -51,6 +75,7 @@ export const workflowRuns: Record<string, CompleteWorkflow> = {
   },
   run2Parallel: {
     id: "run2Parallel",
+    triggerRunId: baseTriggerRun.id,
     templateId: "template1",
     status: "PENDING",
     createdAt: new Date(),
@@ -61,6 +86,7 @@ export const workflowRuns: Record<string, CompleteWorkflow> = {
   },
   runWithFailureInjection: {
     id: "runWithFailureInjection",
+    triggerRunId: baseTriggerRun.id,
     templateId: "template1",
     status: "PENDING",
     createdAt: new Date(),
@@ -71,6 +97,18 @@ export const workflowRuns: Record<string, CompleteWorkflow> = {
   },
   runWithParallelAndFailure: {
     id: "runWithParallelAndFailure",
+    triggerRunId: baseTriggerRun.id,
+    templateId: "template1",
+    status: "PENDING",
+    createdAt: new Date(),
+    startTime: new Date(),
+    updatedAt: new Date(),
+    endTime: new Date(),
+    stepRuns: [],
+  },
+  runWithInputTrigger: {
+    id: "runWithInputTrigger",
+    triggerRunId: triggerRunWithOutputs.id,
     templateId: "template1",
     status: "PENDING",
     createdAt: new Date(),
@@ -358,6 +396,39 @@ export const mockWTWithParallelExecutionAndConvergentStep: WorkflowTemplate = {
   ],
 };
 
+export const mockWTWithInputFromTrigger: WorkflowTemplate = {
+  entryPointId: "step1",
+  name: "T1",
+  status: "PUBLISHED",
+  triggers: [
+    {
+      id: "trigger1",
+      inputs: {},
+      isConfigured: true,
+      type: "webhook",
+      visualizationMetadata: basicVisualizationMetadata,
+    },
+  ],
+  steps: [
+    {
+      id: "step1",
+      name: "Step 1",
+      inputs: {
+        name: {
+          inputSource: "trigger_output",
+          triggerDetails: {
+            outputPath: "foo",
+          },
+        },
+      },
+      isConfigured: true,
+      type: "hello-world",
+      visualizationMetadata: basicVisualizationMetadata,
+    },
+  ],
+  connections: [],
+};
+
 export const mockWTWithParallelExecutionAndFaiure: WorkflowTemplate = {
   entryPointId: "step1",
   name: "T1",
@@ -464,4 +535,5 @@ export const buildMockData = () => ({
   mockWorkflowTemplateWithStaticInputs: structuredClone(
     mockWorkflowTemplateWithStaticInputs
   ),
+  mockWTWithInputFromTrigger: structuredClone(mockWTWithInputFromTrigger),
 });
