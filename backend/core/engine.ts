@@ -9,7 +9,7 @@ import {
 } from "@prisma/client";
 import { pluginRegistryMap } from "./pluginRegistry";
 import { EventEmitter } from "events";
-import { getNestedValue } from "./utils";
+import { resolveDynamicInputs } from "./utils/resolveDynamicFields";
 
 type EngineConstructor = {
   workflow: WorkflowTemplate;
@@ -21,52 +21,6 @@ type EngineConstructor = {
 const events = {
   ON_COMPLETE: "onComplete",
   ON_STEP_FAILED: "onStepFailed",
-};
-
-const resolveValueFromObj = (
-  obj: any,
-  stepRuns: StepRun[],
-  triggerRun: TriggerRun
-): any => {
-  if (typeof obj !== "object" && !Array.isArray(obj)) return obj;
-
-  if (typeof obj === "object" && typeof obj.inputSource === "string") {
-    const inputSource = obj.inputSource;
-    if (inputSource === "static_value") return obj.staticValue;
-
-    if (inputSource === "step_output") {
-      const targetStepId = obj.stepDetails.stepId;
-      const stepRunFromStepId = stepRuns.find(
-        (stepRun) => stepRun.stepId === targetStepId
-      );
-
-      if (!stepRunFromStepId)
-        throw new Error("Cannot find stepRun id for input lookup");
-
-      return getNestedValue(
-        stepRunFromStepId.output,
-        obj.stepDetails.outputPath
-      );
-    }
-
-    if (inputSource === "trigger_output") {
-      return getNestedValue(triggerRun.output, obj.triggerDetails.outputPath);
-    }
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map((item) => resolveValueFromObj(item, stepRuns, triggerRun));
-  }
-
-  if (typeof obj === "object") {
-    const resolvedInputs: Record<string, unknown> = {};
-    Object.keys(obj).forEach((key) => {
-      resolvedInputs[key] = resolveValueFromObj(obj[key], stepRuns, triggerRun);
-    });
-    return resolvedInputs;
-  }
-
-  return obj;
 };
 
 export class WorkflowEngine {
@@ -251,7 +205,7 @@ export class WorkflowEngine {
     )?.inputs;
 
     if (!expectedInputs) throw new Error("Cannot find inputs in this step");
-    return resolveValueFromObj(expectedInputs, this.stepRuns, this.triggerRun);
+    return resolveDynamicInputs(expectedInputs, this.stepRuns, this.triggerRun);
   }
 
   async executePlugin(
