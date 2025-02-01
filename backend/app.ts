@@ -13,6 +13,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import cron from "node-cron";
 import { runWorker } from "./core/worker";
+import CronTriggerManager from "./core/cronTrigger";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,6 +57,9 @@ export async function build(opts?: FastifyServerOptions) {
   cron.schedule("*/10 * * * * *", () => {
     runWorker(app.prisma);
   });
+
+  app.decorate("cronManager", new CronTriggerManager(app.prisma));
+  await app.cronManager.syncTriggers();
 
   return app;
 }

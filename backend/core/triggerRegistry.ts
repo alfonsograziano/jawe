@@ -25,6 +25,15 @@ const HttpTriggerSchema = Type.Object(
   { description: "Schema for an HTTP trigger in JAWE." }
 );
 
+const CronTriggerSchema = Type.Object(
+  {
+    cronExpression: Type.String({
+      description: "A cron expression to schedule the workflow execution.",
+    }),
+  },
+  { description: "Schema for a Cron trigger in JAWE." }
+);
+
 export default HttpTriggerSchema;
 
 export const triggerRegistry = [
@@ -34,6 +43,12 @@ export const triggerRegistry = [
     description:
       "Do an HTTP call on a specific endpoint to trigger a workflow execution",
     inputs: HttpTriggerSchema,
+  },
+  {
+    id: "cron",
+    name: "Scheduled execution",
+    description: "Schedule a workflow execution using a cron expression",
+    inputs: CronTriggerSchema,
   },
 ];
 

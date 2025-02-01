@@ -436,6 +436,8 @@ export default async function workflowTemplate(app: FastifyInstance) {
           where: { id },
         });
 
+        await app.cronManager.syncTriggers();
+
         return reply.status(200).send({
           success: true,
           message: "Workflow template deleted successfully.",
@@ -498,6 +500,8 @@ export default async function workflowTemplate(app: FastifyInstance) {
           where: { id },
           data: { status: "PUBLISHED" },
         });
+
+        await app.cronManager.syncTriggers();
 
         return reply.status(200).send({
           success: true,
