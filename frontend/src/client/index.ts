@@ -32,6 +32,10 @@ export type WorkflowRunStepData = NonNullable<
   WorkflowRunData["stepRuns"]
 >[number];
 
+export type WorkflowRunTriggerRunData = NonNullable<
+  WorkflowRunData["triggerRun"]
+>;
+
 export class Client {
   health() {
     return client.GET("/health");

@@ -709,6 +709,11 @@ export interface paths {
                                 stepId: string;
                                 runId: string;
                             }[];
+                            triggerRun: {
+                                id: string;
+                                output: unknown;
+                                triggerId: string;
+                            };
                             template: {
                                 id: string;
                                 name: string;

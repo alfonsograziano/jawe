@@ -51,6 +51,11 @@ const WorkflowRunDetailsResponse = Type.Object({
       runId: Type.String(),
     })
   ),
+  triggerRun: Type.Object({
+    id: Type.String(),
+    output: Type.Any(),
+    triggerId: Type.String(),
+  }),
   template: GetWorkflowResponse,
 });
 
@@ -116,6 +121,7 @@ export default async function workflowRun(app: FastifyInstance) {
         where: { id: workflowRunId },
         include: {
           stepRuns: true,
+          triggerRun: true,
           template: {
             include: {
               steps: true,

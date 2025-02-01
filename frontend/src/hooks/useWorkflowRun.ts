@@ -77,14 +77,16 @@ export const getNodesAndEdgesFromTemplate = (data: WorkflowRunData) => {
 
     let nodeType = "trigger-with-toolbar";
 
+    const isTriggerExecuted = data.triggerRun.triggerId === trigger.id;
+
     nodes.push({
       id: trigger.id,
-      executionRunId: undefined,
+      executionRunId: isTriggerExecuted ? data.triggerRun.id : undefined,
       position: metadata.position,
       type: nodeType,
       style: {
-        borderColor: trigger.isConfigured ? "green" : "black",
-        borderWidth: trigger.isConfigured ? "1.5px" : "1px",
+        borderColor: isTriggerExecuted ? "green" : "black",
+        borderWidth: isTriggerExecuted ? "1.5px" : "1px",
       },
       data: {
         ...metadata.data,

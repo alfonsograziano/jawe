@@ -12,6 +12,6 @@ body {
   height: 100vh;
 }
 
-fieldset#root {
+fieldset {
   border-color: transparent;
 }

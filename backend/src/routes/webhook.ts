@@ -13,11 +13,6 @@ type TriggerInputs = {
   redirectUrl?: string;
 };
 
-type Trigger = {
-  inputs?: TriggerInputs;
-  workflowTemplateId: string;
-};
-
 export default async function webhook(app: FastifyInstance) {
   app.route({
     method: ["GET", "POST"],
@@ -27,7 +22,7 @@ export default async function webhook(app: FastifyInstance) {
         const method = request.method as string;
         const triggerUrl = request.url.split("/webhook/")[1];
 
-        const trigger = (await app.prisma.trigger.findFirst({
+        const trigger = await app.prisma.trigger.findFirst({
           where: {
             AND: [
               { type: "webhook" },
@@ -45,15 +40,16 @@ export default async function webhook(app: FastifyInstance) {
               },
             ],
           },
-        })) as Trigger;
+        });
 
         if (!trigger) {
           const errorResponse: ErrorResponse = { error: "Trigger not found" };
           return reply.code(404).send(errorResponse);
         }
 
+        const webhookTriggerInputs = trigger.inputs as TriggerInputs;
         // Authorization check
-        const expectedAuthorization = trigger.inputs?.authorization;
+        const expectedAuthorization = webhookTriggerInputs.authorization;
         if (expectedAuthorization) {
           const authorizationToken = request.headers.authorization;
           if (
@@ -65,8 +61,31 @@ export default async function webhook(app: FastifyInstance) {
           }
         }
 
+        const triggerRun = await app.prisma.triggerRun.create({
+          data: {
+            triggerId: trigger.id,
+            output: {
+              request: {
+                method: request.method,
+                url: request.url,
+                headers: request.headers,
+                body: request.body
+                  ? JSON.parse(JSON.stringify(request.body))
+                  : null,
+                query: request.query
+                  ? JSON.parse(JSON.stringify(request.query))
+                  : null,
+                params: request.params
+                  ? JSON.parse(JSON.stringify(request.params))
+                  : null,
+              },
+            },
+          },
+        });
+
         const workflowRun = await app.prisma.workflowRun.create({
           data: {
+            triggerRunId: triggerRun.id,
             templateId: trigger.workflowTemplateId,
             status: "PENDING",
             //TODO: Remove start time from here as it must be set when you pick the job
@@ -74,14 +93,12 @@ export default async function webhook(app: FastifyInstance) {
           },
         });
 
-        const response: WorkflowRunResponse = { workflowRunId: workflowRun.id };
-
         // Handle optional redirect
-        const redirectUrl = trigger.inputs?.redirectUrl;
+        const redirectUrl = webhookTriggerInputs.redirectUrl;
         if (redirectUrl) {
           reply.redirect(redirectUrl);
         } else {
-          reply.send(response);
+          reply.send({ workflowRunId: workflowRun.id });
         }
       } catch (error) {
         console.error("Error handling trigger:", error);

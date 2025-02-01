@@ -4,15 +4,12 @@ import { Value } from "@sinclair/typebox/value";
 import { enhanceFieldSchemaWithInputSource } from "../../core/utils/buildDynamicInputField";
 
 const NameType = Type.String({ title: "Name" });
-
 const InputSchema = Type.Object({
   name: enhanceFieldSchemaWithInputSource(NameType),
 });
-
 const ResolvedInputSchema = Type.Object({
   name: NameType,
 });
-
 const OutputSchema = Type.Object({
   greetings: Type.String({ minLength: 1 }),
 });
@@ -36,7 +33,6 @@ export default class HelloWorld implements BasePlugin {
     if (!isValid) {
       throw new Error("Invalid input provided");
     }
-
     return {
       greetings: `Hello ${inputs.name}`,
     };

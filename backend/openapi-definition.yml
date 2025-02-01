@@ -744,6 +744,18 @@ paths:
                         - updatedAt
                         - stepId
                         - runId
+                  triggerRun:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      output: {}
+                      triggerId:
+                        type: string
+                    required:
+                      - id
+                      - output
+                      - triggerId
                   template:
                     type: object
                     properties:
@@ -878,6 +890,7 @@ paths:
                   - status
                   - startTime
                   - stepRuns
+                  - triggerRun
                   - template
         "404":
           description: Default Response

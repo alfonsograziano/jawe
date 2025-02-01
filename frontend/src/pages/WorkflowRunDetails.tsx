@@ -16,10 +16,11 @@ import {
 } from "@xyflow/react";
 import { useEffect, useState } from "react";
 import BackButton from "../components/Back";
-import { Descriptions, Tag, Splitter } from "antd";
+import { Descriptions, Splitter } from "antd";
 import { WorkflowRunStepData } from "../client";
 import StepRunInfoDrawer from "../components/StepRunInfoDrawer";
 import { StatusTag } from "../components/StatusTag";
+import TriggerRunInfoDrawer from "../components/TriggerRunInfoDrawer";
 
 const nodeTypes = {
   "node-with-toolbar": NodeWithToolbar,
@@ -39,6 +40,9 @@ const WorkflowRunDetailsPage = () => {
     WorkflowRunStepData | undefined
   >();
 
+  const [isDrawerTriggerRunOpen, setIsDrawerTriggerRunOpen] =
+    useState<boolean>(false);
+
   useEffect(() => {
     const { nodes: formattedNodes, edges: formattedEdges } = graphInfo;
 
@@ -47,10 +51,12 @@ const WorkflowRunDetailsPage = () => {
       data: {
         ...node.data,
         onOpenDetails: async () => {
+          if (runData?.triggerRun.id === node.executionRunId) {
+            setIsDrawerTriggerRunOpen(true);
+          }
           const stepRun = runData?.stepRuns.find(
             (stepRun) => node.executionRunId === stepRun.id
           );
-          console.log(node, stepRun);
           setDrawerStepInfo(stepRun);
         },
       },
@@ -133,6 +139,16 @@ const WorkflowRunDetailsPage = () => {
           }}
           open={typeof drawerStepInfo !== "undefined"}
           stepInfo={drawerStepInfo}
+        />
+      )}
+
+      {runData?.triggerRun && (
+        <TriggerRunInfoDrawer
+          onClose={() => {
+            setIsDrawerTriggerRunOpen(false);
+          }}
+          open={isDrawerTriggerRunOpen}
+          triggerRunInfo={runData.triggerRun}
         />
       )}
     </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Button, Radio, RadioChangeEvent } from "antd";
+import { Modal, Button, Radio, RadioChangeEvent, Row, Col } from "antd";
 import Card from "antd/es/card/Card";
 
 type Plugin = {
@@ -39,30 +39,34 @@ const PluginSelectorModal: React.FC<PluginModalProps> = ({
       open={isOpen}
       onCancel={onCancel}
       footer={null}
+      width={800}
     >
       <Radio.Group
         onChange={handleSelect}
         value={selectedPlugin}
         style={{ width: "100%" }}
       >
-        {plugins.map((plugin) => (
-          <Card
-            key={plugin.id}
-            style={{ marginBottom: 16 }}
-            styles={{
-              body: {
-                padding: 12,
-              },
-            }}
-          >
-            <Radio value={plugin.id} style={{ width: "100%" }}>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <strong style={{ fontSize: 16 }}>{plugin.name}</strong>
-                <p style={{ margin: 0, color: "#555" }}>{plugin.description}</p>
-              </div>
-            </Radio>
-          </Card>
-        ))}
+        <Row gutter={[16, 16]}>
+          {plugins.map((plugin) => (
+            <Col span={8} key={plugin.id}>
+              <Card
+                hoverable
+                style={{
+                  height: "100%",
+                }}
+              >
+                <Radio value={plugin.id} style={{ width: "100%" }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <strong style={{ fontSize: 16 }}>{plugin.name}</strong>
+                    <p style={{ margin: 0, color: "#555" }}>
+                      {plugin.description}
+                    </p>
+                  </div>
+                </Radio>
+              </Card>
+            </Col>
+          ))}
+        </Row>
       </Radio.Group>
 
       <div style={{ marginTop: 16, textAlign: "right" }}>
