@@ -4,7 +4,8 @@ import { Value } from "@sinclair/typebox/value";
 
 const HttpRequestInputSchema = Type.Object({
   url: Type.String(),
-  method: Type.String({ enum: ["GET", "POST"] }),
+  method: Type.String({ enum: ["GET", "POST", "PUT", "DELETE", "PATCH"] }),
+  headers: Type.Optional(Type.Record(Type.String(), Type.String())),
   body: Type.Optional(Type.Any()),
 });
 
@@ -21,7 +22,8 @@ export default class HttpRequestPlugin implements BasePlugin {
     return {
       id: "http-request",
       name: "HTTP Request",
-      description: "Makes an HTTP request to a specified URL",
+      description:
+        "Makes an HTTP request to a specified URL with customizable options",
       inputs: HttpRequestInputSchema,
       outputs: HttpRequestOutputSchema,
     };
@@ -33,12 +35,22 @@ export default class HttpRequestPlugin implements BasePlugin {
       throw new Error("Invalid input provided");
     }
 
+    const { url, method, headers, body } = inputs;
+
     try {
-      // Simulate HTTP request
-      console.log(`Making ${inputs.method} request to ${inputs.url}`);
-      return { statusCode: 200, response: { message: "Success" } };
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+
+      const responseData = await response.json();
+      return {
+        statusCode: response.status,
+        response: responseData,
+      };
     } catch (error) {
-      throw new Error("HTTP request failed");
+      throw new Error(`HTTP request failed: ${(error as Error).message}`);
     }
   }
 }
