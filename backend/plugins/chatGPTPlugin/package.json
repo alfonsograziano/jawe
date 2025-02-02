@@ -1,0 +1,12 @@
+{
+  "name": "conditionals",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "openai": "^4.79.1"
+  },
+  "description": ""
+}
