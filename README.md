@@ -6,6 +6,10 @@ JAWE is a powerful and extensible Workflow Engine designed to manage workflows a
 
 ---
 
+![Talk title - Building a Workflow Engine](./docs/nf-header.png?raw=true "Title")
+
+---
+
 ## 🚀 Features
 
 - **Flexible Workflow Templates**: Define workflows with steps and transitions.
