@@ -8,7 +8,6 @@ import {
   TriggerRun,
 } from "@prisma/client";
 import { pluginRegistryMap } from "./pluginRegistry";
-import { EventEmitter } from "events";
 import { resolveDynamicInputs } from "./utils/resolveDynamicFields";
 
 type WorkflowRun = {
@@ -23,60 +22,53 @@ type EngineConstructor = {
   workflowRun: WorkflowRun;
 };
 
-const events = {
-  ON_COMPLETE: "onComplete",
-  ON_STEP_FAILED: "onStepFailed",
-};
-
 export class WorkflowEngine {
   workflow: WorkflowTemplate;
   repository: WorkflowRunRepository;
-  currentlyRunningSteps: Record<string, StepRun>;
-  eventEmitter: EventEmitter;
   workflowRun: WorkflowRun;
+  dependencyCount: Record<string, number> = {};
 
   constructor(context: EngineConstructor) {
     this.workflow = context.workflow;
     this.repository = context.repository;
-    this.currentlyRunningSteps = {};
-    this.eventEmitter = new EventEmitter();
     this.workflowRun = context.workflowRun;
   }
 
+  computeDependencies() {
+    // Initialize each step with 0 prerequisites.
+    for (const step of this.workflow.steps) {
+      this.dependencyCount[step.id] = 0;
+    }
+
+    for (const conn of this.workflow.connections) {
+      // Each connection adds one prerequisite to the target step.
+      this.dependencyCount[conn.toStepId] =
+        (this.dependencyCount[conn.toStepId] || 0) + 1;
+    }
+  }
+
   async execute() {
-    return new Promise(async (resolve) => {
+    this.computeDependencies();
+
+    await this.repository.changeExecutionStatus(
+      this.workflowRun.id,
+      WorkflowStatus.RUNNING
+    );
+
+    try {
+      const entryPoint = this.getEntryPointStep();
+      await this.executeStep(entryPoint);
+
       await this.repository.changeExecutionStatus(
         this.workflowRun.id,
-        WorkflowStatus.RUNNING
+        WorkflowStatus.COMPLETED
       );
-
-      this.eventEmitter.on(events.ON_COMPLETE, async () => {
-        await this.repository.changeExecutionStatus(
-          this.workflowRun.id,
-          WorkflowStatus.COMPLETED
-        );
-        resolve({
-          success: true,
-        });
-      });
-
-      this.eventEmitter.on(events.ON_STEP_FAILED, async () => {
-        await this.repository.changeExecutionStatus(
-          this.workflowRun.id,
-          WorkflowStatus.FAILED
-        );
-        resolve({
-          success: false,
-        });
-      });
-
-      try {
-        const entryPoint = this.getEntryPointStep();
-        this.executeStep(entryPoint);
-      } catch (error) {
-        this.eventEmitter.emit(events.ON_STEP_FAILED);
-      }
-    });
+    } catch (error) {
+      await this.repository.changeExecutionStatus(
+        this.workflowRun.id,
+        WorkflowStatus.FAILED
+      );
+    }
   }
 
   getEntryPointStep() {
@@ -88,9 +80,6 @@ export class WorkflowEngine {
   }
 
   async executeStep(step: Step) {
-    const isReadyToExecute = this.isStepReadyToExecute(step);
-    if (!isReadyToExecute) return;
-
     const currentStatus = await this.repository.getExecutionStatus(
       this.workflowRun.id
     );
@@ -106,10 +95,10 @@ export class WorkflowEngine {
     );
     this.workflowRun.stepRuns.push(stepRun);
 
+    let stepRunWithOutput;
+
     try {
       const resolvedInputs = this.resolveInputs(step.id);
-
-      this.currentlyRunningSteps[step.id] = stepRun;
 
       const outputs = await this.executePlugin(stepRun, resolvedInputs);
       const localRun = this.workflowRun.stepRuns.find(
@@ -120,48 +109,40 @@ export class WorkflowEngine {
       // So that can be used as input for a next step
       localRun.output = outputs;
 
-      const stepRunWithOutput = await this.repository.updateStepRunStatus(
+      stepRunWithOutput = await this.repository.updateStepRunStatus(
         stepRun.id,
         StepRunStatus.COMPLETED,
         outputs
       );
-
-      delete this.currentlyRunningSteps[step.id];
-
-      // Get all the possible connections and stuff to spawn
-      const stepsToExecute = this.getNextStepsToExecute(
-        step,
-        stepRunWithOutput
-      );
-      // This path is completed
-      if (!stepsToExecute) {
-        const runningSteps = Object.keys(this.currentlyRunningSteps).length;
-        // There are no steps running anymore
-        // meaning that the one just completed was the last one
-        if (runningSteps === 0) {
-          this.eventEmitter.emit(events.ON_COMPLETE);
-        }
-      } else {
-        stepsToExecute.forEach((step) => {
-          this.executeStep(step);
-        });
-      }
     } catch (error) {
       await this.repository.updateStepRunStatus(
         stepRun.id,
         StepRunStatus.FAILED,
         {}
       );
-      this.eventEmitter.emit(events.ON_STEP_FAILED);
+      await this.repository.changeExecutionStatus(
+        this.workflowRun.id,
+        WorkflowStatus.FAILED
+      );
+      throw error;
     }
+
+    const stepsToExecute = this.getNextStepsToExecute(step, stepRunWithOutput);
+
+    await Promise.all(
+      stepsToExecute.map(async (childStep) => {
+        this.dependencyCount[childStep.id]--;
+        if (this.dependencyCount[childStep.id] === 0) {
+          return this.executeStep(childStep);
+        }
+      })
+    );
   }
 
   getNextStepsToExecute(previousStep: Step, stepRun?: StepRun) {
     const incomingConnections = this.workflow.connections.filter(
       (conn) => conn.fromStepId === previousStep.id
     );
-
-    if (!incomingConnections) return undefined;
 
     const possibleStepsToExecute = incomingConnections.map((connection) => {
       const candidateStep = this.workflow.steps.find(
@@ -174,7 +155,7 @@ export class WorkflowEngine {
     });
 
     // We're in one of the end (leaf) nodes
-    if (possibleStepsToExecute.length === 0) return undefined;
+    if (possibleStepsToExecute.length === 0) return [];
 
     // If the output of the lates step contains a nextStepId preference
     // This is needed for example in the case of a conditional
@@ -203,7 +184,6 @@ export class WorkflowEngine {
    *                   or if a referenced step or trigger output is missing.
    */
   resolveInputs(stepId: string) {
-    // Assuming we only got static steps for now
     const expectedInputs = this.workflow.steps.find(
       (step) => step.id === stepId
     )?.inputs;
@@ -253,43 +233,5 @@ export class WorkflowEngine {
         if (candidateSelectedByPrevStep) return candidateSelectedByPrevStep;
       }
     }
-  }
-
-  /**
-   * Determines if a step in the workflow is ready to execute.
-   *
-   * In a Directed Acyclic Graph (DAG)-based workflow, a step (or node)
-   * can only be executed when all its parent steps (branches that converge
-   * into the node) have completed execution. This function checks if all
-   * parent steps of the given step are completed and ensures that no
-   * parent steps are still running.
-   *
-   * @param {Object} step - The step object representing the current node in the workflow.
-   *                        Must contain a unique `id` property.
-   * @returns {boolean} - Returns `true` if the step is ready to execute (all parent
-   *                      steps are completed), otherwise `false`.
-   *
-   */
-  isStepReadyToExecute(step: Step) {
-    const entryPoint = this.getEntryPointStep();
-
-    // Entry point step is always ready to execute
-    if (step.id === entryPoint.id) {
-      return true;
-    }
-
-    // Find all parent steps (steps with connections leading to the current step)
-    const incomingStepsIds = this.workflow.connections
-      .filter((conn) => conn.toStepId === step.id)
-      .map((conn) => conn.fromStepId);
-
-    // Check which parent steps are still running
-    const runningStepsIds = Object.keys(this.currentlyRunningSteps);
-    const incomingRunningSteps = incomingStepsIds.filter((stepId) =>
-      runningStepsIds.includes(stepId)
-    );
-
-    // Step is ready to execute only if none of the parent steps are still running
-    return incomingRunningSteps.length === 0;
   }
 }

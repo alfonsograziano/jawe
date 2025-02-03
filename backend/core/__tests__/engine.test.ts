@@ -295,43 +295,48 @@ describe("WorkflowEngine", () => {
       }),
     });
 
-    const spy = vi.spyOn(engine, "isStepReadyToExecute");
+    // Spy on the repository’s createStepRun so we can later check in which order
+    // steps were started. In the new implementation, dependency management is done
+    // internally by decrementing a dependency counter. This spy helps us verify that
+    // the convergent step (here "step4") is only started after its two prerequisites
+    // ("step2" and "step3") have both been started.
+    const createStepRunSpy = vi.spyOn(repository, "createStepRun");
+
     await engine.execute();
 
-    expect(repository.getMockData().workflowRuns[runId].status).toBe(
-      WorkflowStatus.COMPLETED
-    );
+    const wfRun = repository.getMockData().workflowRuns[runId];
+    expect(wfRun.status).toBe(WorkflowStatus.COMPLETED);
 
     const expectedStepsToRun = ["step2", "step3", "step4"];
-    for (const expectedStep of expectedStepsToRun) {
-      expect(
-        repository.getMockData().stepRuns[createStepRunId(runId, expectedStep)]
-          .status
-      ).toBe(StepRunStatus.COMPLETED);
+    for (const stepId of expectedStepsToRun) {
+      const stepRun =
+        repository.getMockData().stepRuns[createStepRunId(runId, stepId)];
+      expect(stepRun.status).toBe(StepRunStatus.COMPLETED);
     }
 
-    // When I'm executing it with the fastest step, I want it to return false
-    // As we still have another step running in parallel
-    const callsWithFalseReturn = spy.mock.calls.filter((_, index) => {
-      return (
-        spy.mock.results[index].type === "return" &&
-        spy.mock.results[index].value === false
-      );
-    });
+    // Because step4 has two incoming connections (from step2 and step3),
+    // its step run should only be created after both step2 and step3 have been started.
+    // We extract the order from the createStepRun spy.
+    const stepRunCalls = createStepRunSpy.mock.calls
+      .map((args) => ({
+        stepId: args[0] as string,
+        workflowRunId: args[1] as string,
+      }))
+      .filter((call) => call.workflowRunId === runId);
 
-    // I should get false when I try to call the last step
-    // As it gets called twice and the first time the other one is still occupied
-    expect(callsWithFalseReturn[0][0]).toEqual({
-      id: "step4",
-      name: "Step 4",
-      inputs: {},
-      isConfigured: true,
-      type: "example-plugin",
-      visualizationMetadata: expect.objectContaining({}),
-    });
-    expect(callsWithFalseReturn.length).toBe(1);
+    const indexStep2 = stepRunCalls.findIndex(
+      (call) => call.stepId === "step2"
+    );
+    const indexStep3 = stepRunCalls.findIndex(
+      (call) => call.stepId === "step3"
+    );
+    const indexStep4 = stepRunCalls.findIndex(
+      (call) => call.stepId === "step4"
+    );
+
+    expect(indexStep4).toBeGreaterThan(indexStep2);
+    expect(indexStep4).toBeGreaterThan(indexStep3);
   });
-
   it("should recognize a failure in a previous step on a different branch and stop its execution immediately", async () => {
     const repository = new WorkflowRunRepositoryMock(buildMockData());
     const runId = "runWithParallelAndFailure";
