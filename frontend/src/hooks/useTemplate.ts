@@ -168,6 +168,7 @@ export const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
         ...metadata.data,
         forceToolbarVisible: false,
         toolbarPosition: Position.Left,
+        isEnabled: true, // Steps are always enabled for now
       },
     };
 
@@ -199,6 +200,7 @@ export const getNodesAndEdgesFromTemplate = (data: WorkflowTemplate) => {
         ...metadata.data,
         forceToolbarVisible: false,
         toolbarPosition: Position.Left,
+        isEnabled: trigger.isEnabled,
       },
     });
   });
@@ -240,6 +242,7 @@ export const addTriggerToTemplate = (
     type: trigger.id,
     inputs: {},
     isConfigured: false,
+    isEnabled: false,
     visualizationMetadata: {
       position: { x: 500, y: 500 },
       data: { label: trigger.name },
@@ -435,6 +438,15 @@ export const useTemplate = (templateId: string) => {
     setStepsInputs: (stepId: string, inputs: any) => {
       if (!template) return;
       setTemplateWithHistory(setStepInputsInTemplate(template, stepId, inputs));
+    },
+    updateTriggerStatus: async (triggerId: string, isEnabled: boolean) => {
+      const client = new Client();
+
+      const { data, error } = await client.updateWorkflowTrigger(triggerId, {
+        isEnabled,
+      });
+      if (typeof error === "undefined") await fetchTemplate();
+      return { data, error };
     },
   };
 };

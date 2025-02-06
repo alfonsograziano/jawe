@@ -171,6 +171,7 @@ export interface paths {
                                     };
                                 };
                                 isConfigured: boolean;
+                                isEnabled: boolean;
                             }[];
                             canBePublished: boolean;
                         };
@@ -237,6 +238,7 @@ export interface paths {
                                     label: string;
                                 };
                             };
+                            isEnabled: boolean;
                         }[];
                     };
                 };
@@ -386,6 +388,68 @@ export interface paths {
                 path: {
                     id: string;
                 };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            name: string;
+                            status: string;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workflow-template/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -623,6 +687,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trigger/workflow/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{templateId}": {
         parameters: {
             query?: never;
@@ -695,7 +809,7 @@ export interface paths {
                             id: string;
                             status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
                             /** Format: date-time */
-                            startTime: string;
+                            startTime?: string;
                             /** Format: date-time */
                             endTime?: string;
                             stepRuns: {
@@ -756,6 +870,7 @@ export interface paths {
                                         };
                                     };
                                     isConfigured: boolean;
+                                    isEnabled: boolean;
                                 }[];
                                 canBePublished: boolean;
                             };

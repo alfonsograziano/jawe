@@ -8,6 +8,7 @@ import Form from "@rjsf/antd";
 import validator from "@rjsf/validator-ajv8";
 import { IconButtonProps } from "@rjsf/utils";
 import JsonInputForm from "./JSONInputForm";
+import Editor from "@monaco-editor/react";
 
 function SubmitButton(props: IconButtonProps) {
   const { icon, iconType, ...btnProps } = props;
@@ -68,29 +69,35 @@ const StepInfoDrawer = ({
 
       <Paragraph>Step ID: {stepInfo.id}</Paragraph>
 
-      {pluginData.inputs && (
-        <>
-          {pluginData.id === "conditional-plugin" ? (
-            <JsonInputForm
-              stepInfo={stepInfo}
-              onSaveValues={onSaveValues}
-              onClose={onClose}
-              editDisabled={editDisabled}
-            />
-          ) : (
-            <Form
-              schema={pluginData.inputs}
-              validator={validator}
-              formData={stepInfo.inputs}
-              templates={{ ButtonTemplates: { SubmitButton } }}
-              onSubmit={(values: any) => {
-                onSaveValues(values.formData);
-                onClose();
-              }}
-              disabled={editDisabled}
-            />
-          )}
-        </>
+      {pluginData.inputs && pluginData.id === "execute-js" ? (
+        <ExecuteJSPlugin
+          stepInfo={stepInfo}
+          onSave={(values: any) => {
+            console.log(values);
+            onSaveValues(values);
+            onClose();
+          }}
+          pluginData={pluginData}
+        />
+      ) : pluginData.inputs && pluginData.id === "conditional-plugin" ? (
+        <JsonInputForm
+          stepInfo={stepInfo}
+          onSaveValues={onSaveValues}
+          onClose={onClose}
+          editDisabled={editDisabled}
+        />
+      ) : (
+        <Form
+          schema={pluginData.inputs}
+          validator={validator}
+          formData={stepInfo.inputs}
+          templates={{ ButtonTemplates: { SubmitButton } }}
+          onSubmit={(values: any) => {
+            onSaveValues(values.formData);
+            onClose();
+          }}
+          disabled={editDisabled}
+        />
       )}
       <Divider />
       <Collapse>
@@ -109,3 +116,51 @@ const StepInfoDrawer = ({
 };
 
 export default StepInfoDrawer;
+
+type ExecuteJSPluginProps = {
+  stepInfo: StepInfo;
+  pluginData: PluginDetails;
+  onSave: (values: any) => void;
+};
+const ExecuteJSPlugin = ({
+  stepInfo,
+  pluginData,
+  onSave,
+}: ExecuteJSPluginProps) => {
+  const [inputs, setInputs] = useState(stepInfo.inputs);
+
+  function removeCodeProperty(schema: Record<string, any>) {
+    if (schema) {
+      if (Array.isArray(schema.required)) {
+        schema.required = schema.required.filter((field) => field !== "code");
+      }
+      if (schema.properties && schema.properties.code) {
+        delete schema.properties.code;
+      }
+    }
+    return schema;
+  }
+
+  return (
+    <div>
+      <Editor
+        height="200px"
+        defaultLanguage="javascript"
+        value={inputs?.code || ""}
+        onChange={(value: string) => {
+          setInputs({ ...inputs, code: value });
+        }}
+        options={{ minimap: { enabled: false } }}
+      />
+      <Form
+        schema={removeCodeProperty(pluginData.inputs)}
+        validator={validator}
+        formData={inputs}
+        templates={{ ButtonTemplates: { SubmitButton } }}
+        onSubmit={(values: any) => {
+          onSave({ code: inputs.code, ...values.formData });
+        }}
+      />
+    </div>
+  );
+};

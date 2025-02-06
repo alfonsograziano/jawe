@@ -27,6 +27,14 @@ export default async function webhook(app: FastifyInstance) {
             AND: [
               { type: "webhook" },
               {
+                isEnabled: true,
+              },
+              {
+                workflowTemplate: {
+                  status: "PUBLISHED",
+                },
+              },
+              {
                 inputs: {
                   path: ["url"],
                   equals: triggerUrl,

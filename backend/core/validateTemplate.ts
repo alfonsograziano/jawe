@@ -23,6 +23,7 @@ export const Trigger = Type.Object({
   inputs: Type.Any(),
   visualizationMetadata: VisualizationMetadata,
   isConfigured: Type.Boolean(),
+  isEnabled: Type.Boolean(),
 });
 
 export const TriggerInputOnly = Type.Omit(Trigger, ["isConfigured"]);
@@ -60,6 +61,8 @@ export const WorkflowTemplate = Type.Object({
   status: TemplateStatus,
   triggers: Type.Array(Trigger),
 });
+
+export type Trigger = Static<typeof Trigger>;
 
 export type WorkflowTemplate = Static<typeof WorkflowTemplate>;
 

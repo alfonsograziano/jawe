@@ -46,6 +46,13 @@ export class Client {
   ) {
     return client.POST("/api/v1/workflow-template/", { body });
   }
+
+  importTemplate(
+    body: paths["/api/v1/workflow-template/import"]["post"]["requestBody"]["content"]["application/json"]
+  ) {
+    return client.POST("/api/v1/workflow-template/import", { body });
+  }
+
   updateTemplate(
     templateId: string,
     body: paths["/api/v1/workflow-template/{id}"]["put"]["requestBody"]["content"]["application/json"]
@@ -113,6 +120,16 @@ export class Client {
   getRunDetails(runId: string) {
     return client.GET("/api/v1/run/{workflowRunId}", {
       params: { path: { workflowRunId: runId } },
+    });
+  }
+
+  updateWorkflowTrigger(
+    triggerId: string,
+    body: paths["/api/v1/trigger/workflow/{id}"]["post"]["requestBody"]["content"]["application/json"]
+  ) {
+    return client.POST("/api/v1/trigger/workflow/{id}", {
+      params: { path: { id: triggerId } },
+      body,
     });
   }
 }

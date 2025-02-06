@@ -1,16 +1,19 @@
 import React, { useState } from "react";
 import { Modal, Button, Input, message } from "antd";
+import ImportButton from "./ImportButton";
 
 type WorkflowTemplateModalProps = {
   open: boolean;
   onClose: () => void;
   onSaveCallback: (templateName: string) => Promise<void>;
+  onImport: (template: Record<string, any>) => Promise<void>;
 };
 
 const WorkflowTemplateCreationModal: React.FC<WorkflowTemplateModalProps> = ({
   open,
   onClose,
   onSaveCallback,
+  onImport,
 }) => {
   const [templateName, setTemplateName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -50,6 +53,23 @@ const WorkflowTemplateCreationModal: React.FC<WorkflowTemplateModalProps> = ({
           placeholder="Enter template name"
         />
       </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          marginBottom: "40px",
+        }}
+      >
+        or
+        <ImportButton
+          onImport={async (template) => {
+            await onImport(template);
+            onClose();
+          }}
+        />
+      </div>
+
       <div style={{ textAlign: "right" }}>
         <Button onClick={onClose} style={{ marginRight: 8 }}>
           Cancel

@@ -15,6 +15,18 @@ const GetTriggerParams = Type.Object({
   id: Type.String(),
 });
 
+const UpdateWorkflowTriggerParams = Type.Object({
+  id: Type.String(),
+});
+
+const UpdateWorkflowTriggerBody = Type.Object({
+  isEnabled: Type.Boolean(),
+});
+
+const UpdateWorkflowTriggerResponse = Type.Object({
+  id: Type.String(),
+});
+
 const GetTriggerResponse = Type.Object({
   id: Type.String(),
   name: Type.String(),
@@ -22,7 +34,7 @@ const GetTriggerResponse = Type.Object({
   inputs: Type.Any(),
 });
 
-const GetTriggerErrorResponse = Type.Object({
+const GenericErrorResponse = Type.Object({
   error: Type.String(),
 });
 
@@ -43,7 +55,7 @@ export default async function trigger(app: FastifyInstance) {
 
   app.get<{
     Params: Static<typeof GetTriggerParams>;
-    Reply: Static<typeof GetTriggerResponse | typeof GetTriggerErrorResponse>;
+    Reply: Static<typeof GetTriggerResponse | typeof GenericErrorResponse>;
   }>(
     "/:id",
     {
@@ -51,7 +63,7 @@ export default async function trigger(app: FastifyInstance) {
         params: GetTriggerParams,
         response: {
           200: GetTriggerResponse,
-          404: GetTriggerErrorResponse,
+          404: GenericErrorResponse,
         },
       },
     },
@@ -67,6 +79,38 @@ export default async function trigger(app: FastifyInstance) {
       }
 
       return reply.status(200).send(trigger);
+    }
+  );
+
+  app.post<{
+    Params: Static<typeof UpdateWorkflowTriggerParams>;
+    Body: Static<typeof UpdateWorkflowTriggerBody>;
+    Reply: Static<
+      typeof UpdateWorkflowTriggerResponse | typeof GenericErrorResponse
+    >;
+  }>(
+    "/workflow/:id",
+    {
+      schema: {
+        params: UpdateWorkflowTriggerParams,
+        response: {
+          200: UpdateWorkflowTriggerResponse,
+          404: GenericErrorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      const { isEnabled } = request.body;
+
+      await app.prisma.trigger.update({
+        where: { id },
+        data: {
+          isEnabled: isEnabled,
+        },
+      });
+
+      return reply.status(200).send({ id });
     }
   );
 }

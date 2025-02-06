@@ -87,6 +87,7 @@ model Trigger {
   visualizationMetadata Json
   isConfigured          Boolean          @default(false)
   TriggerRun            TriggerRun[]
+  isEnabled             Boolean          @default(false)
 }
 
 model TriggerRun {

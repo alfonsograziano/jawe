@@ -1,5 +1,5 @@
 import { Position, NodeToolbar, Handle } from "@xyflow/react";
-import { Button } from "antd";
+import { Button, Switch, Popover } from "antd";
 import {
   DeleteOutlined,
   InfoCircleOutlined,
@@ -13,8 +13,10 @@ export default function TriggerWithToolbar({
     forceToolbarVisible: boolean;
     toolbarPosition: Position;
     label: string;
+    isEnabled: boolean;
     onDelete?: () => void;
     onOpenDetails: () => void;
+    onEnableChange: (enabled: boolean) => void;
   };
 }) {
   return (
@@ -40,6 +42,20 @@ export default function TriggerWithToolbar({
       <div>
         <ThunderboltFilled style={{ fontSize: "16px", color: "#08c" }} />
         <div>{data.label}</div>
+        <Popover
+          content={
+            <p>
+              The trigger can either be enabled or disabled.
+              <br /> If disabled, the trigger will not run when invoked.
+            </p>
+          }
+        >
+          <Switch
+            value={data.isEnabled}
+            onChange={data.onEnableChange}
+            size="small"
+          />
+        </Popover>
       </div>
 
       <Handle type="source" position={Position.Bottom} isConnectable={true} />

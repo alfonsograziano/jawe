@@ -61,7 +61,17 @@ class CronTriggerManager {
   async syncTriggers() {
     const dbTriggers = await this.prisma.trigger.findMany({
       where: {
-        type: "cron",
+        AND: [
+          { type: "cron" },
+          {
+            isEnabled: true,
+          },
+          {
+            workflowTemplate: {
+              status: "PUBLISHED",
+            },
+          },
+        ],
       },
       select: {
         id: true,

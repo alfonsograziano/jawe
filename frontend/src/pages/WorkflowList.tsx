@@ -52,6 +52,11 @@ const WorkflowList: React.FC = () => {
                 await client.createTemplate({ name: templateName });
                 await loadTemplates();
               }}
+              onImport={async (template) => {
+                const client = new Client();
+                await client.importTemplate({ template });
+                await loadTemplates();
+              }}
             />
             {templatesList && (
               <WorkflowsTemplateList

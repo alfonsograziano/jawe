@@ -34,6 +34,7 @@ import PublishTemplateButton from "./PublishTemplateButton";
 import DuplicateButtonAndFeedback from "./DuplicateButtonAndFeedback";
 import TriggerInfoDrawer from "./TriggerInfoDrawer";
 import Card from "antd/es/card/Card";
+import DownloadTemplateButton from "./DownloadTemplateButton";
 
 const nodeTypes = {
   "node-with-toolbar": NodeWithToolbar,
@@ -90,39 +91,55 @@ export default function WorkflowTemplateDetails({
     canEditTemplate,
     setTriggerInputs,
     setStepsInputs,
+    updateTriggerStatus,
   } = useTemplate(id);
 
   useEffect(() => {
     const { nodes: formattedNodes, edges: formattedEdges } = graphInfo;
 
-    const nodesWithActions = formattedNodes.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        onDelete: async () => {
-          if (node.type === "node-with-toolbar" || "entry-point-with-toolbar") {
-            deleteStep(node.id);
-          }
+    const nodesWithActions = formattedNodes.map((node) => {
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          onDelete: canEditTemplate
+            ? async () => {
+                if (
+                  node.type === "node-with-toolbar" ||
+                  "entry-point-with-toolbar"
+                ) {
+                  deleteStep(node.id);
+                }
 
-          if (node.type === "trigger-with-toolbar") {
-            deleteTrigger(node.id);
-          }
-        },
-        onOpenDetails: async () => {
-          if (node.type === "trigger-with-toolbar") {
-            setDrawerTriggerInfo(
-              template?.triggers?.find((triggers) => triggers.id === node.id)
-            );
-          }
+                if (node.type === "trigger-with-toolbar") {
+                  deleteTrigger(node.id);
+                }
+              }
+            : undefined,
+          onOpenDetails: async () => {
+            if (node.type === "trigger-with-toolbar") {
+              setDrawerTriggerInfo(
+                template?.triggers?.find((triggers) => triggers.id === node.id)
+              );
+            }
 
-          if (node.type === "node-with-toolbar" || "entry-point-with-toolbar") {
-            setDrawerStepInfo(
-              template?.steps?.find((step) => step.id === node.id)
-            );
-          }
+            if (
+              node.type === "node-with-toolbar" ||
+              "entry-point-with-toolbar"
+            ) {
+              setDrawerStepInfo(
+                template?.steps?.find((step) => step.id === node.id)
+              );
+            }
+          },
+          onEnableChange: async (enabled: boolean) => {
+            if (node.type === "trigger-with-toolbar") {
+              updateTriggerStatus(node.id, enabled);
+            }
+          },
         },
-      },
-    }));
+      };
+    });
     setNodes(nodesWithActions as any);
     setEdges(formattedEdges as any);
   }, [graphInfo, template]);
@@ -193,7 +210,6 @@ export default function WorkflowTemplateDetails({
             styles={{ body: { margin: 10, padding: 0 } }}
           >
             <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-              <BackButton />
               <Input
                 value={template.name}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -296,6 +312,8 @@ export default function WorkflowTemplateDetails({
                   return { id: data.id };
                 }}
               />
+
+              <DownloadTemplateButton templateDefinition={template} />
             </div>
           </Card>
         </div>

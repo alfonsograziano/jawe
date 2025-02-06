@@ -193,12 +193,15 @@ paths:
                             - data
                         isConfigured:
                           type: boolean
+                        isEnabled:
+                          type: boolean
                       required:
                         - id
                         - type
                         - inputs
                         - visualizationMetadata
                         - isConfigured
+                        - isEnabled
                   canBePublished:
                     type: boolean
                 required:
@@ -327,11 +330,14 @@ paths:
                         required:
                           - position
                           - data
+                      isEnabled:
+                        type: boolean
                     required:
                       - id
                       - type
                       - inputs
                       - visualizationMetadata
+                      - isEnabled
               required:
                 - triggers
         required: true
@@ -493,6 +499,51 @@ paths:
                     type: string
                 required:
                   - error
+  /api/v1/workflow-template/import:
+    post:
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  status:
+                    type: string
+                  message:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - status
+                  - message
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
+        "500":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
   /api/v1/plugin/:
     get:
       responses:
@@ -610,6 +661,37 @@ paths:
                   - name
                   - description
                   - inputs
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
+  /api/v1/trigger/workflow/{id}:
+    post:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                required:
+                  - id
         "404":
           description: Default Response
           content:
@@ -869,12 +951,15 @@ paths:
                                 - data
                             isConfigured:
                               type: boolean
+                            isEnabled:
+                              type: boolean
                           required:
                             - id
                             - type
                             - inputs
                             - visualizationMetadata
                             - isConfigured
+                            - isEnabled
                       canBePublished:
                         type: boolean
                     required:

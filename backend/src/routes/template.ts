@@ -642,4 +642,87 @@ export default async function workflowTemplate(app: FastifyInstance) {
       }
     }
   );
+  app.post<{
+    Body: Record<string, any>;
+    Reply: Static<
+      typeof DuplicateTemplateResponse | typeof DuplicateTemplateErrorResponse
+    >;
+  }>(
+    "/import",
+    {
+      schema: {
+        response: {
+          200: DuplicateTemplateResponse,
+          404: DuplicateTemplateErrorResponse,
+          500: DuplicateTemplateErrorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { template } = request.body;
+
+      // Removing a property that doesn't exist in the DB
+      delete template.canBePublished;
+
+      // Generate new name with random suffix
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      const newName = `${template.name} - Copy ${randomSuffix}`;
+
+      delete template.name;
+
+      try {
+        if (!template || !template.id) {
+          return reply.status(400).send({ error: "Invalid template data." });
+        }
+
+        const newTemplate = await app.prisma.workflowTemplate.create({
+          data: {
+            id: template.id,
+            name: newName,
+            status: "DRAFT",
+          },
+        });
+
+        await app.prisma.step.createMany({
+          data: template.steps.map((step: any) => ({
+            ...step,
+            workflowTemplateId: newTemplate.id, // Ensure correct linkage
+          })),
+        });
+
+        await app.prisma.connection.createMany({
+          data: template.connections.map((connection: any) => ({
+            ...connection,
+            workflowTemplateId: newTemplate.id,
+          })),
+        });
+
+        await app.prisma.trigger.createMany({
+          data: template.triggers.map((trigger: any) => ({
+            ...trigger,
+            workflowTemplateId: newTemplate.id,
+          })),
+        });
+
+        if (template.entryPointId) {
+          await app.prisma.workflowTemplate.update({
+            where: { id: newTemplate.id },
+            data: { entryPointId: template.entryPointId },
+          });
+        }
+
+        return reply.status(200).send({
+          id: newTemplate.id,
+          name: newTemplate.name,
+          status: newTemplate.status,
+          message: "Template imported successfully.",
+        });
+      } catch (error) {
+        console.error(error);
+        return reply.status(500).send({
+          error: "An error occurred while importing the template.",
+        });
+      }
+    }
+  );
 }
