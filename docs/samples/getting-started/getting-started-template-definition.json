@@ -1,0 +1,55 @@
+{
+  "id": "fa4b62f4-2cdf-47b0-8583-71d4da355576",
+  "name": "Getting started",
+  "status": "PUBLISHED",
+  "steps": [
+    {
+      "id": "aad9ca18-d7f3-483b-802e-b8c281b96942",
+      "name": "Hello World",
+      "type": "hello-world",
+      "visualizationMetadata": {
+        "position": {
+          "x": 296,
+          "y": 363
+        },
+        "data": {
+          "label": "Hello World"
+        }
+      },
+      "isConfigured": true,
+      "inputs": {
+        "name": {
+          "inputSource": "trigger_output",
+          "triggerDetails": {
+            "outputPath": "request.body.name"
+          }
+        }
+      }
+    }
+  ],
+  "updatedAt": "2025-02-07T19:27:53.385Z",
+  "triggers": [
+    {
+      "id": "trigger-webhook9f0babd8-a757-4754-b381-15c1715b801d",
+      "type": "webhook",
+      "inputs": {
+        "url": "getting-started",
+        "method": "POST"
+      },
+      "visualizationMetadata": {
+        "position": {
+          "x": 302,
+          "y": 228
+        },
+        "data": {
+          "label": "Webhook"
+        }
+      },
+      "isConfigured": true,
+      "isEnabled": true
+    }
+  ],
+  "canBePublished": true,
+  "entryPointId": "aad9ca18-d7f3-483b-802e-b8c281b96942",
+  "connections": []
+}

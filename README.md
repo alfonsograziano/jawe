@@ -77,6 +77,14 @@ Plugins encapsulate the business logic of a workflow step. To create a new plugi
 
 ---
 
+## ⬇️ Importing and Exporting a Workflow
+
+The Import/Export feature in JAWE enables users to serialize and deserialize workflow templates, allowing for easy saving, sharing, and restoration of workflows, including all configurations, triggers, steps, and connections.
+
+[Guide to Import and Export a Workflow](docs/Import%20and%20export%20workflows.md)
+
+---
+
 ## 🤝 Contributing
 
 We welcome contributions to JAWE! To contribute:
