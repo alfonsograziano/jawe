@@ -8,8 +8,10 @@
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
+    "db:migrate": "npx prisma migrate dev",
     "dev": "nodemon | pino-pretty",
-    "generate-ts-client": "npx openapi-typescript ./openapi-definition.yml -o ../frontend/src/client/schema.d.ts"
+    "generate-ts-client": "npx openapi-typescript ./openapi-definition.yml -o ../frontend/src/client/schema.d.ts",
+    "postinstall": "npx prisma generate"
   },
   "nodemonConfig": {
     "watch": [
