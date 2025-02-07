@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "workspaces": [
     "frontend",
-    "backend"
+    "backend",
+    "backend/plugins/*"
   ],
   "description": "**JAWE** is a lightweight, highly extensible, and easy-to-use workflow engine built in TypeScript.",
   "main": "index.js",
