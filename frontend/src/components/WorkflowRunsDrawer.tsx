@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Table, Typography, Spin, Button } from "antd";
+import { useNavigate } from "react-router-dom";
+import { Table, Spin, Button, Drawer } from "antd";
 import { Client, WorkflowsRunsList } from "../client";
-import { StatusTag, Status } from "../components/StatusTag";
-import BackButton from "../components/Back";
+import { StatusTag, Status } from "./StatusTag";
 
-const { Title } = Typography;
+type WorkflowRunsDrawerrProps = {
+  onClose: () => void;
+  open: boolean;
+  workflowId: string;
+};
 
-const WorkflowRunsPage = () => {
-  const { id: workflowId } = useParams();
+const WorkflowRunsDrawer = ({
+  onClose,
+  open,
+  workflowId,
+}: WorkflowRunsDrawerrProps) => {
   const navigate = useNavigate();
   const [data, setData] = useState<WorkflowsRunsList>([]);
   const [loading, setLoading] = useState(true);
@@ -29,9 +35,8 @@ const WorkflowRunsPage = () => {
         setLoading(false);
       }
     };
-
-    fetchRuns();
-  }, []);
+    if (open) fetchRuns();
+  }, [open]);
 
   const handleOpenDetails = (runId: string) => {
     navigate(`/workflow/${workflowId}/runs/${runId}`);
@@ -73,16 +78,21 @@ const WorkflowRunsPage = () => {
   ];
 
   return (
-    <div style={{ padding: "24px" }}>
-      <BackButton />
-      <Title level={2}>Workflow Runs</Title>
+    <Drawer
+      title={"Workflow Executions"}
+      onClose={onClose}
+      open={open}
+      size="large"
+      loading={loading}
+      mask={false}
+    >
       {loading ? (
         <Spin size="large" />
       ) : (
         <Table columns={columns} dataSource={data} rowKey="id" />
       )}
-    </div>
+    </Drawer>
   );
 };
 
-export default WorkflowRunsPage;
+export default WorkflowRunsDrawer;

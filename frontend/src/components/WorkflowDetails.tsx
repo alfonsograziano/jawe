@@ -15,8 +15,6 @@ import "@xyflow/react/dist/style.css";
 import { WorkflowStep } from "../client";
 import AddNewPlugin from "./AddNewPlugin";
 import { Button, message, Popover, Input } from "antd";
-import BackButton from "./Back";
-import { useNavigate } from "react-router-dom";
 import NodeWithToolbar from "./NodeWithToolbar";
 import { useTemplate } from "../hooks/useTemplate";
 import StepInfoDrawer from "./StepInfoDrawer";
@@ -35,6 +33,7 @@ import DuplicateButtonAndFeedback from "./DuplicateButtonAndFeedback";
 import TriggerInfoDrawer from "./TriggerInfoDrawer";
 import Card from "antd/es/card/Card";
 import DownloadTemplateButton from "./DownloadTemplateButton";
+import WorkflowRunsDrawer from "./WorkflowRunsDrawer";
 
 const nodeTypes = {
   "node-with-toolbar": NodeWithToolbar,
@@ -53,10 +52,10 @@ export default function WorkflowTemplateDetails({
   onRefetchTemplates,
   onDeleteTemplate,
 }: WorkflowTemplateDetailsProps) {
-  const navigate = useNavigate();
-
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  const [openRunsDrawer, setOpenRunsDrawer] = useState(false);
 
   const [drawerStepInfo, setDrawerStepInfo] = useState<
     WorkflowStep | undefined
@@ -231,7 +230,7 @@ export default function WorkflowTemplateDetails({
               {template.status === "PUBLISHED" && (
                 <Button
                   icon={<UnorderedListOutlined />}
-                  onClick={() => navigate(`/workflow/${id}/runs`)}
+                  onClick={() => setOpenRunsDrawer(true)}
                 >
                   View executions
                 </Button>
@@ -347,6 +346,12 @@ export default function WorkflowTemplateDetails({
           setTriggerInputs(drawerTrigerInfo.id, values);
         }}
         editDisabled={!canEditTemplate}
+      />
+
+      <WorkflowRunsDrawer
+        onClose={() => setOpenRunsDrawer(false)}
+        open={openRunsDrawer}
+        workflowId={template.id}
       />
     </ReactFlow>
   );

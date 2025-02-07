@@ -4,14 +4,12 @@ import "./index.css";
 import WorkflowList from "./pages/WorkflowList.tsx";
 
 import { BrowserRouter, Routes, Route } from "react-router";
-import WorkflowRunsPage from "./pages/WorkflowRuns.tsx";
 import WorkflowRunDetailsPage from "./pages/WorkflowRunDetails.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/workflow/:id/runs" element={<WorkflowRunsPage />} />
         <Route
           path="/workflow/:id/runs/:runId"
           element={<WorkflowRunDetailsPage />}
