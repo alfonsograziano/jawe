@@ -6,10 +6,10 @@ services:
       PGUSER: ${POSTGRES_USER:-postgres} # will use current os user otherwise.
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-mydb}
     ports:
       - ${POSTGRES_PORT:-5439}:5432
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/01_init.sql
       - db:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready", "-U", "postgres"]
