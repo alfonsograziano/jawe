@@ -43,6 +43,7 @@ const StepInfoDrawer = ({
 }: StepInfoDrawerProps) => {
   const [pluginData, setPluginData] = useState<PluginDetails | undefined>();
   const [loadingPluginData, setLoadingPluginData] = useState(false);
+  const [fullScreen, setFullScreen] = useState(false);
 
   useEffect(() => {
     setLoadingPluginData(true);
@@ -57,18 +58,38 @@ const StepInfoDrawer = ({
 
   return (
     <Drawer
-      title={pluginData.name || "Loading"}
+      title={
+        <>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            {pluginData.name || "Loading"}
+
+            <Button
+              onClick={() => setFullScreen(!fullScreen)}
+              style={{ marginBottom: "0px" }}
+            >
+              {fullScreen ? "Exit Full Screen" : "Full Screen"}
+            </Button>
+          </div>
+        </>
+      }
       onClose={onClose}
       open={open}
       size="large"
       loading={loadingPluginData}
       mask={false}
+      width={fullScreen ? "100vw" : undefined} // Adjust width dynamically
+      height={fullScreen ? "100vh" : undefined} // Optional for vertical drawers
     >
       <Paragraph>{pluginData.description}</Paragraph>
       <Title level={3}>Configuration</Title>
-
       <Paragraph>Step ID: {stepInfo.id}</Paragraph>
-
       {pluginData.inputs && pluginData.id === "execute-js" ? (
         <ExecuteJSPlugin
           stepInfo={stepInfo}
