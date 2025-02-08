@@ -59,6 +59,16 @@ This command installs the dependencies, starts the Docker containers using `dock
 
 ---
 
+## ⬇️ Your first workflow: Importing and Exporting a Workflow
+
+The Import/Export feature in JAWE enables users to serialize and deserialize workflow templates, allowing for easy saving, sharing, and restoration of workflows, including all configurations, triggers, steps, and connections.
+
+If you want to start with a sample workflow in a matter of seconds, you can follow the import/export guide and import the getting-started sample
+
+[Guide to Import and Export a Workflow](docs/Import%20and%20export%20workflows.md)
+
+---
+
 ## 🧪 Running Tests
 
 To run the unit tests and ensure everything works as expected:
@@ -74,14 +84,6 @@ npm run test
 Plugins encapsulate the business logic of a workflow step. To create a new plugin, follow the guide linked below:
 
 [Guide to Creating a Plugin](docs/Create%20a%20plugin.md)
-
----
-
-## ⬇️ Importing and Exporting a Workflow
-
-The Import/Export feature in JAWE enables users to serialize and deserialize workflow templates, allowing for easy saving, sharing, and restoration of workflows, including all configurations, triggers, steps, and connections.
-
-[Guide to Import and Export a Workflow](docs/Import%20and%20export%20workflows.md)
 
 ---
 
