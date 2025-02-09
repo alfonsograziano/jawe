@@ -17,6 +17,7 @@ import { triggerRegistryMap } from "../../core/triggerRegistry";
 import { Value } from "@sinclair/typebox/value";
 import { pluginRegistryMap } from "../../core/pluginRegistry";
 import Ajv from "ajv";
+import { updateIds } from "../../core/utils/updateIds";
 const ajv = new Ajv();
 
 const DuplicateTemplateParams = Type.Object({
@@ -659,7 +660,9 @@ export default async function workflowTemplate(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { template } = request.body;
+      const { template: templateWithOldIds } = request.body;
+
+      const template = updateIds(templateWithOldIds);
 
       // Removing a property that doesn't exist in the DB
       delete template.canBePublished;

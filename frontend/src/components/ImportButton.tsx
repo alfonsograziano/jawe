@@ -1,7 +1,6 @@
 import { Button, Upload, message } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import type { UploadProps } from "antd/es/upload";
-import { updateIds } from "../utils";
 
 const ImportButton = ({
   onImport,
@@ -15,9 +14,7 @@ const ImportButton = ({
         if (event.target) {
           const jsonData = JSON.parse(event.target.result as string);
 
-          const newData = updateIds(jsonData);
-
-          onImport(newData);
+          onImport(jsonData);
 
           message.success("File successfully imported!");
         }

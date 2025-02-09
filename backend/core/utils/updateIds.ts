@@ -2,9 +2,9 @@
  * updateIds
  *
  * This function accepts a JSON string as input. It parses the JSON,
- * recursively finds all id values (i.e. for keys "id" or keys ending with "Id")
+ * recursively finds all id values (i.e. for keys "id" or keys ending with "Id"),
  * and creates a mapping from each old id to a new UUID.
- * Then it replaces all occurrences of each old id (even as part of longer strings)
+ * Then it replaces all occurrences of each old id (even within longer strings)
  * with the new id.
  *
  * @param jsonString - The input JSON as a string.
@@ -43,7 +43,7 @@ export function updateIds(obj: Record<string, any>) {
   collectIds(obj);
 
   /**
-   * Recursively walk the object and replace every occurrence of any old id (in strings)
+   * Recursively walk the object and replace every occurrence of any old id (in objects and strings)
    * with its new id.
    */
   function replaceIds(node: any): any {
@@ -59,7 +59,7 @@ export function updateIds(obj: Record<string, any>) {
       return newNode;
     } else if (typeof node === "string") {
       let updatedString = node;
-      // For each mapping, replace all occurrences in the string.
+      // Replace all occurrences of old IDs in strings.
       for (const oldId in idMapping) {
         if (Object.prototype.hasOwnProperty.call(idMapping, oldId)) {
           const newId = idMapping[oldId];
@@ -73,7 +73,6 @@ export function updateIds(obj: Record<string, any>) {
       }
       return updatedString;
     }
-    // For numbers, booleans, null, etc.
     return node;
   }
 
