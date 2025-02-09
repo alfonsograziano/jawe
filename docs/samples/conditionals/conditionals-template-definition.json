@@ -1,0 +1,126 @@
+{
+  "id": "2555608b-9733-4b4b-8fcb-09f10e93c9d3",
+  "name": "Conditionals",
+  "status": "DRAFT",
+  "steps": [
+    {
+      "id": "c4fdd1a5-4f44-4c2b-a898-d56fd9286147",
+      "name": "Hello World",
+      "type": "hello-world",
+      "visualizationMetadata": {
+        "position": {
+          "x": 357,
+          "y": 628
+        },
+        "data": {
+          "label": "Hello World"
+        }
+      },
+      "isConfigured": true,
+      "inputs": {
+        "name": {
+          "inputSource": "trigger_output",
+          "triggerDetails": {
+            "outputPath": "request.body.name"
+          }
+        }
+      }
+    },
+    {
+      "id": "39864f19-2ee8-45e7-894f-101ae6931b46",
+      "name": "Conditional Plugin",
+      "type": "conditional-plugin",
+      "visualizationMetadata": {
+        "position": {
+          "x": 412,
+          "y": 502
+        },
+        "data": {
+          "label": "Conditional Plugin"
+        }
+      },
+      "isConfigured": true,
+      "inputs": {
+        "facts": {
+          "name": {
+            "inputSource": "trigger_output",
+            "triggerDetails": {
+              "outputPath": "request.body.name"
+            }
+          }
+        },
+        "rules": [
+          {
+            "event": {
+              "type": "nextStep",
+              "params": {
+                "stepId": "c4fdd1a5-4f44-4c2b-a898-d56fd9286147"
+              }
+            },
+            "conditions": {
+              "all": [
+                {
+                  "fact": "name",
+                  "value": "Bob",
+                  "operator": "equal"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "e82cc2c5-9bc8-4e5e-b5d5-528fc6a6b02b",
+      "name": "No Operation",
+      "type": "no-op",
+      "visualizationMetadata": {
+        "position": {
+          "x": 492,
+          "y": 628
+        },
+        "data": {
+          "label": "No Operation"
+        }
+      },
+      "isConfigured": true,
+      "inputs": {}
+    }
+  ],
+  "updatedAt": "2025-02-09T20:34:07.969Z",
+  "triggers": [
+    {
+      "id": "b105a587-3585-4910-883c-d672a6b9f510",
+      "type": "webhook",
+      "inputs": {
+        "url": "conditional",
+        "method": "POST"
+      },
+      "visualizationMetadata": {
+        "position": {
+          "x": 436,
+          "y": 382
+        },
+        "data": {
+          "label": "Webhook"
+        }
+      },
+      "isConfigured": true,
+      "isEnabled": true
+    }
+  ],
+  "canBePublished": true,
+  "entryPointId": "39864f19-2ee8-45e7-894f-101ae6931b46",
+  "connections": [
+    {
+      "id": "f07ddd2f-f556-46da-94ef-9e3e3d3b710b",
+      "fromStepId": "39864f19-2ee8-45e7-894f-101ae6931b46",
+      "toStepId": "c4fdd1a5-4f44-4c2b-a898-d56fd9286147"
+    },
+    {
+      "id": "7ad18b5d-1fe1-4850-8b63-eec99af41909",
+      "fromStepId": "39864f19-2ee8-45e7-894f-101ae6931b46",
+      "toStepId": "e82cc2c5-9bc8-4e5e-b5d5-528fc6a6b02b"
+    }
+  ]
+}
