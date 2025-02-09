@@ -16,14 +16,7 @@ const DuplicateButtonAndFeedback = ({
       return;
     }
     message.info({
-      content: (
-        <>
-          New template created.
-          <Button type="link" onClick={() => navigate(`/workflow/${id}`)}>
-            Open
-          </Button>
-        </>
-      ),
+      content: <>New template created.</>,
       duration: 3,
     });
   };

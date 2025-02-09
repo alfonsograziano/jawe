@@ -72,12 +72,14 @@ export default class ConditionalPlugin implements BasePlugin {
       (event) => event.type === "nextStep"
     );
 
+    let nextStepId = null;
     if (nextStepEvent && nextStepEvent.params && nextStepEvent.params.stepId) {
-      return {
-        nextStepId: nextStepEvent.params.stepId,
-        ...eventTypesAsObj,
-      };
+      nextStepId = nextStepEvent.params.stepId;
     }
-    return eventTypesAsObj;
+
+    return {
+      nextStepId,
+      ...eventTypesAsObj,
+    };
   }
 }

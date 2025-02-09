@@ -113,7 +113,9 @@ const WorkflowRunDetailsPage = () => {
                   {runData.id}
                 </Descriptions.Item>
                 <Descriptions.Item label="Start Time">
-                  {new Date(runData.startTime).toLocaleString()}
+                  {runData.startTime
+                    ? new Date(runData.startTime).toLocaleString()
+                    : "N/A"}{" "}
                 </Descriptions.Item>
                 <Descriptions.Item label="End Time">
                   {runData.endTime

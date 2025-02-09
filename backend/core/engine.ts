@@ -160,9 +160,10 @@ export class WorkflowEngine {
     // If the output of the lates step contains a nextStepId preference
     // This is needed for example in the case of a conditional
     if (stepRun) {
-      const nextStepSelectedFromPrevStep =
-        this.extractNextStepFromStepRun(stepRun);
-      if (nextStepSelectedFromPrevStep) return [nextStepSelectedFromPrevStep];
+      const nextStepsSelectedFromPrevStep =
+        this.extractNextStepsFromStepRun(stepRun);
+      if (Array.isArray(nextStepsSelectedFromPrevStep))
+        return nextStepsSelectedFromPrevStep;
     }
 
     return possibleStepsToExecute;
@@ -223,14 +224,16 @@ export class WorkflowEngine {
    * @param {StepRun} stepRun - The completed step run whose output may specify the next step.
    * @returns {Step | undefined} - The next step in the workflow if found; otherwise, undefined.
    */
-  extractNextStepFromStepRun(stepRun: StepRun) {
+  extractNextStepsFromStepRun(stepRun: StepRun) {
     if (stepRun && typeof stepRun.output === "object") {
       const stepOutput = stepRun.output as JsonObject;
+      if (stepOutput.nextStepId === null) return [];
+
       if (typeof stepOutput.nextStepId === "string") {
         const candidateSelectedByPrevStep = this.workflow.steps.find(
           (step) => stepOutput.nextStepId === step.id
         );
-        if (candidateSelectedByPrevStep) return candidateSelectedByPrevStep;
+        if (candidateSelectedByPrevStep) return [candidateSelectedByPrevStep];
       }
     }
   }

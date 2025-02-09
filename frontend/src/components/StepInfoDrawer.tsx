@@ -197,7 +197,10 @@ const ConditionalPlugin = ({
   pluginData,
   onSave,
 }: ConditionalPluginProps) => {
-  const [inputs, setInputs] = useState(stepInfo.inputs);
+  const [inputs, setInputs] = useState({
+    ...stepInfo.inputs,
+    rules: JSON.stringify(stepInfo.inputs?.rules, null, 2) || "",
+  });
 
   function removeRulesProperty(schema: Record<string, any>) {
     if (schema) {
@@ -217,7 +220,7 @@ const ConditionalPlugin = ({
       <Editor
         height="200px"
         defaultLanguage="json"
-        value={inputs?.rules || ""}
+        value={inputs.rules}
         onChange={(value: string) => {
           setInputs({ ...inputs, rules: value });
         }}
@@ -230,8 +233,12 @@ const ConditionalPlugin = ({
         formData={inputs}
         templates={{ ButtonTemplates: { SubmitButton } }}
         onSubmit={(values: any) => {
-          const rules = JSON.parse(inputs.rules);
-          onSave({ ...values.formData, rules });
+          try {
+            const rules = JSON.parse(inputs.rules);
+            onSave({ ...values.formData, rules });
+          } catch (e) {
+            onSave({ ...values.formData });
+          }
         }}
       />
     </div>
