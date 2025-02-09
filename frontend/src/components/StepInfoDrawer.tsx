@@ -94,18 +94,19 @@ const StepInfoDrawer = ({
         <ExecuteJSPlugin
           stepInfo={stepInfo}
           onSave={(values: any) => {
-            console.log(values);
             onSaveValues(values);
             onClose();
           }}
           pluginData={pluginData}
         />
       ) : pluginData.inputs && pluginData.id === "conditional-plugin" ? (
-        <JsonInputForm
+        <ConditionalPlugin
           stepInfo={stepInfo}
-          onSaveValues={onSaveValues}
-          onClose={onClose}
-          editDisabled={editDisabled}
+          onSave={(values: any) => {
+            onSaveValues(values);
+            onClose();
+          }}
+          pluginData={pluginData}
         />
       ) : (
         <Form
@@ -179,7 +180,58 @@ const ExecuteJSPlugin = ({
         formData={inputs}
         templates={{ ButtonTemplates: { SubmitButton } }}
         onSubmit={(values: any) => {
-          onSave({ code: inputs.code, ...values.formData });
+          onSave({ ...values.formData, code: inputs.code });
+        }}
+      />
+    </div>
+  );
+};
+
+type ConditionalPluginProps = {
+  stepInfo: StepInfo;
+  pluginData: PluginDetails;
+  onSave: (values: any) => void;
+};
+const ConditionalPlugin = ({
+  stepInfo,
+  pluginData,
+  onSave,
+}: ConditionalPluginProps) => {
+  const [inputs, setInputs] = useState(stepInfo.inputs);
+
+  function removeRulesProperty(schema: Record<string, any>) {
+    if (schema) {
+      if (Array.isArray(schema.required)) {
+        schema.required = schema.required.filter((field) => field !== "rules");
+      }
+      if (schema.properties && schema.properties.rules) {
+        delete schema.properties.rules;
+      }
+    }
+    return schema;
+  }
+
+  return (
+    <div>
+      <h2>Rules:</h2>
+      <Editor
+        height="200px"
+        defaultLanguage="json"
+        value={inputs?.rules || ""}
+        onChange={(value: string) => {
+          setInputs({ ...inputs, rules: value });
+        }}
+        options={{ minimap: { enabled: false } }}
+      />
+      <h2>Facts (variables): </h2>
+      <Form
+        schema={removeRulesProperty(pluginData.inputs)}
+        validator={validator}
+        formData={inputs}
+        templates={{ ButtonTemplates: { SubmitButton } }}
+        onSubmit={(values: any) => {
+          const rules = JSON.parse(inputs.rules);
+          onSave({ ...values.formData, rules });
         }}
       />
     </div>

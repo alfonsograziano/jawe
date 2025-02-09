@@ -2,18 +2,27 @@ import { BasePlugin } from "../../core/basePlugin";
 import { Type, Static } from "@sinclair/typebox";
 import { Engine, RuleProperties } from "json-rules-engine";
 import { Value } from "@sinclair/typebox/value";
+import { enhanceFieldObjectSchemaWithInputSource } from "../../core/utils/buildDynamicInputField";
+
+const FactsSchema = Type.Object({}, { additionalProperties: true });
+const RulesSchema = Type.Array(
+  Type.Object({
+    conditions: Type.Object({}, { additionalProperties: true }),
+    event: Type.Object({
+      type: Type.String({ minLength: 1 }),
+      params: Type.Object({}, { additionalProperties: true }),
+    }),
+  })
+);
 
 const InputSchema = Type.Object({
-  facts: Type.Object({}, { additionalProperties: true }),
-  rules: Type.Array(
-    Type.Object({
-      conditions: Type.Object({}, { additionalProperties: true }),
-      event: Type.Object({
-        type: Type.String({ minLength: 1 }),
-        params: Type.Object({}, { additionalProperties: true }),
-      }),
-    })
-  ),
+  facts: enhanceFieldObjectSchemaWithInputSource(Type.String()),
+  rules: RulesSchema,
+});
+
+const ResolvedInputSchema = Type.Object({
+  facts: FactsSchema,
+  rules: RulesSchema,
 });
 
 const OutputSchema = Type.Object(
@@ -41,7 +50,7 @@ export default class ConditionalPlugin implements BasePlugin {
   async execute(
     inputs: ConditionalPluginInput
   ): Promise<ConditionalPluginOutput> {
-    const isValid = Value.Check(InputSchema, inputs);
+    const isValid = Value.Check(ResolvedInputSchema, inputs);
     if (!isValid) {
       throw new Error("Invalid input provided");
     }
