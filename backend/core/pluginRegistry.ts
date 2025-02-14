@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs/promises";
 import { PluginInfo, BasePlugin } from "./basePlugin";
+import { pathToFileURL } from 'url';
 
 export type Plugin<T extends BasePlugin = BasePlugin> = PluginInfo & {
   default: new () => T;
@@ -22,7 +23,12 @@ async function loadPlugins(directory: string): Promise<Plugin[]> {
       try {
         const modulePath = path.join(pluginPath, "index.ts");
 
-        const pluginModule = await import(modulePath);
+
+        // Convert the module path to a file:// URL
+        const moduleURL = pathToFileURL(modulePath).href;
+
+        // Dynamically import the plugin module
+        const pluginModule = await import(moduleURL);
 
         // Ensure the default export is a constructor and matches BasePlugin
         if (
