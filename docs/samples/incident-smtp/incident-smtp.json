@@ -1,0 +1,270 @@
+{
+  "id": "60bfb65c-e4ed-40ed-bffe-b37eb604d6f0",
+  "name": "Incident response helper",
+  "status": "PUBLISHED",
+  "steps": [
+    {
+      "id": "15e6ebb9-9cf1-4d44-a4ef-449bc190e3e2",
+      "name": "Conditional Plugin",
+      "type": "conditional-plugin",
+      "visualizationMetadata": {
+        "position": {
+          "x": 396,
+          "y": 481
+        },
+        "data": {
+          "label": "Conditional Plugin"
+        }
+      },
+      "isConfigured": true,
+      "inputs": {
+        "facts": {
+          "severity": {
+            "inputSource": "trigger_output",
+            "triggerDetails": {
+              "outputPath": "request.body.severity"
+            }
+          }
+        },
+        "rules": [
+          {
+            "event": {
+              "type": "nextStep",
+              "params": {
+                "stepId": "f1bf202b-459e-4b08-a098-e5d5a42d7684"
+              }
+            },
+            "conditions": {
+              "all": [
+                {
+                  "fact": "severity",
+                  "value": "critical",
+                  "operator": "equal"
+                }
+              ]
+            }
+          },
+          {
+            "event": {
+              "type": "nextStep",
+              "params": {
+                "stepId": "36f8014f-d2a6-4773-be5c-0465e0a873c9"
+              }
+            },
+            "conditions": {
+              "all": [
+                {
+                  "fact": "severity",
+                  "value": "warning",
+                  "operator": "equal"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "28f72667-ef8e-4a73-9ff8-7a9e82b02279",
+      "name": "Send Email",
+      "type": "send-email",
+      "visualizationMetadata": {
+        "position": {
+          "x": 325.2192825857085,
+          "y": 809.2274231175925
+        },
+        "data": {
+          "label": "Send Email"
+        }
+      },
+      "isConfigured": true,
+      "inputs": {
+        "mail": {
+          "to": {
+            "inputSource": "static_value",
+            "staticValue": "alerts@yoursite.com"
+          },
+          "from": {
+            "inputSource": "static_value",
+            "staticValue": "no-reply.incident@yoursite.com"
+          },
+          "text": {
+            "inputSource": "step_output",
+            "staticValue": "1",
+            "stepDetails": {
+              "stepId": "1930a20f-f80e-414e-868e-efe85c1e9b66",
+              "outputPath": "result"
+            }
+          },
+          "subject": {
+            "inputSource": "static_value",
+            "staticValue": "CRITICAL ISSUE - Please take a look quickly"
+          }
+        },
+        "smtp": {
+          "auth": {
+            "pass": "test",
+            "user": "test"
+          },
+          "host": "localhost",
+          "port": 1025,
+          "secure": false
+        }
+      }
+    },
+    {
+      "id": "1930a20f-f80e-414e-868e-efe85c1e9b66",
+      "name": "ChatGPT Plugin",
+      "type": "chatgpt-plugin",
+      "visualizationMetadata": {
+        "position": {
+          "x": 311,
+          "y": 711
+        },
+        "data": {
+          "label": "ChatGPT Plugin"
+        }
+      },
+      "isConfigured": true,
+      "inputs": {
+        "model": {
+          "inputSource": "static_value",
+          "staticValue": "gpt-4o-mini",
+          "stepDetails": {
+            "stepId": "924f6303-8765-481e-ba98-efe3a9d1b20c",
+            "outputPath": "prompt"
+          }
+        },
+        "apiKey": {
+          "inputSource": "static_value",
+          "staticValue": "open-ai-secret-key"
+        },
+        "prompt": {
+          "inputSource": "step_output",
+          "staticValue": "1",
+          "stepDetails": {
+            "stepId": "f1bf202b-459e-4b08-a098-e5d5a42d7684",
+            "outputPath": "result.prompt"
+          }
+        }
+      }
+    },
+    {
+      "id": "36f8014f-d2a6-4773-be5c-0465e0a873c9",
+      "name": "Send Email",
+      "type": "send-email",
+      "visualizationMetadata": {
+        "position": {
+          "x": 500,
+          "y": 617
+        },
+        "data": {
+          "label": "Send Email"
+        }
+      },
+      "isConfigured": true,
+      "inputs": {
+        "mail": {
+          "to": {
+            "inputSource": "static_value",
+            "staticValue": "alerts@yoursite.com"
+          },
+          "from": {
+            "inputSource": "static_value",
+            "staticValue": "no-reply.incident@yoursite.com"
+          },
+          "text": {
+            "inputSource": "static_value",
+            "staticValue": "It looks like you have a new warning - it might be worth taking a look :D "
+          },
+          "subject": {
+            "inputSource": "static_value",
+            "staticValue": "New warning - please take a look"
+          }
+        },
+        "smtp": {
+          "auth": {
+            "pass": "test",
+            "user": "test"
+          },
+          "host": "localhost",
+          "port": 1025,
+          "secure": false
+        }
+      }
+    },
+    {
+      "id": "f1bf202b-459e-4b08-a098-e5d5a42d7684",
+      "name": "Execute JS",
+      "type": "execute-js",
+      "visualizationMetadata": {
+        "position": {
+          "x": 326,
+          "y": 615
+        },
+        "data": {
+          "label": "Execute JS"
+        }
+      },
+      "isConfigured": true,
+      "inputs": {
+        "code": "const body = inputs[0]\n\nlet prompt = `You are a DevOps incident response assistant. You will receive JSON data from a monitoring tool about an alert.\nPlease do the following:\n\nSummarize the incident in plain language for an on-call engineer, including service, severity, and key metrics.\nExplain the potential impact if the incident is not resolved.\nProvide 2/3 actionable suggestions to investigate or resolve the issue.\nInclude a direct link to the alert dashboard if available.\nHere is the alert data:`\n\nreturn {\n    prompt: prompt+JSON.stringify(body)\n}",
+        "variables": [
+          {
+            "inputSource": "trigger_output",
+            "triggerDetails": {
+              "outputPath": "request.body"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "updatedAt": "2025-03-10T07:58:56.715Z",
+  "triggers": [
+    {
+      "id": "trigger-6e4310b4-458d-44ec-9f0d-9b5fb26b63d0",
+      "type": "webhook",
+      "inputs": {
+        "url": "incident",
+        "method": "POST",
+        "authorization": "my-secret-auth-key"
+      },
+      "visualizationMetadata": {
+        "position": {
+          "x": 422,
+          "y": 353
+        },
+        "data": {
+          "label": "Webhook"
+        }
+      },
+      "isConfigured": true,
+      "isEnabled": true
+    }
+  ],
+  "canBePublished": true,
+  "entryPointId": "15e6ebb9-9cf1-4d44-a4ef-449bc190e3e2",
+  "connections": [
+    {
+      "id": "8e9c658b-480d-42db-81b2-10552666c4f0",
+      "fromStepId": "f1bf202b-459e-4b08-a098-e5d5a42d7684",
+      "toStepId": "1930a20f-f80e-414e-868e-efe85c1e9b66"
+    },
+    {
+      "id": "0d2d2d95-5a6a-4ef0-91a8-7ae8c65a848c",
+      "fromStepId": "1930a20f-f80e-414e-868e-efe85c1e9b66",
+      "toStepId": "28f72667-ef8e-4a73-9ff8-7a9e82b02279"
+    },
+    {
+      "id": "7314b258-7bfa-4da8-8649-a1cec94caa67",
+      "fromStepId": "15e6ebb9-9cf1-4d44-a4ef-449bc190e3e2",
+      "toStepId": "f1bf202b-459e-4b08-a098-e5d5a42d7684"
+    },
+    {
+      "id": "edfa234a-3bba-4e42-bba2-102dc654a5a7",
+      "fromStepId": "15e6ebb9-9cf1-4d44-a4ef-449bc190e3e2",
+      "toStepId": "36f8014f-d2a6-4773-be5c-0465e0a873c9"
+    }
+  ]
+}

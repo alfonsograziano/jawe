@@ -94,7 +94,7 @@ export default class SendEmailPlugin implements BasePlugin {
         from: mail.from,
         to: mail.to,
         subject: mail.subject,
-        text: mail.text,
+        //text: mail.text,
         html: mail.html,
       });
 

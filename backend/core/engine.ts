@@ -35,11 +35,6 @@ export class WorkflowEngine {
   }
 
   computeDependencies() {
-    // Initialize each step with 0 prerequisites.
-    for (const step of this.workflow.steps) {
-      this.dependencyCount[step.id] = 0;
-    }
-
     for (const conn of this.workflow.connections) {
       // Each connection adds one prerequisite to the target step.
       this.dependencyCount[conn.toStepId] =
@@ -130,7 +125,7 @@ export class WorkflowEngine {
     const stepsToExecute = this.getNextStepsToExecute(step, stepRunWithOutput);
 
     await Promise.all(
-      stepsToExecute.map(async (childStep) => {
+      stepsToExecute.map((childStep) => {
         this.dependencyCount[childStep.id]--;
         if (this.dependencyCount[childStep.id] === 0) {
           return this.executeStep(childStep);

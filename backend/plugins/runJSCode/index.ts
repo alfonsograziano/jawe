@@ -17,7 +17,7 @@ const InputSchema = Type.Object({
 });
 
 const ResolvedInputSchema = Type.Object({
-  variables: Type.Array(Type.String(), {
+  variables: Type.Array(Type.Any(), {
     title: "Variables",
   }),
   code: Type.String({

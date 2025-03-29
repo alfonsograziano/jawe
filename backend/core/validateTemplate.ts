@@ -121,18 +121,14 @@ export function validateConnections(template: any) {
   const visited = new Set<string>();
   const recStack = new Set<string>();
 
-  function hasCycle(
-    node: string,
-    visited: Set<string>,
-    recStack: Set<string>
-  ): boolean {
+  function hasCycle(node: string, visited: Set<string>): boolean {
     if (!visited.has(node)) {
       visited.add(node);
       recStack.add(node);
 
       const neighbors = adjacencyList.get(node) || [];
       for (const neighbor of neighbors) {
-        if (!visited.has(neighbor) && hasCycle(neighbor, visited, recStack)) {
+        if (!visited.has(neighbor) && hasCycle(neighbor, visited)) {
           return true;
         } else if (recStack.has(neighbor)) {
           return true;
@@ -144,7 +140,7 @@ export function validateConnections(template: any) {
   }
 
   for (const node of stepIds) {
-    if (hasCycle(node, visited, recStack)) {
+    if (hasCycle(node, visited)) {
       throw new Error("Workflow connections must form a valid DAG");
     }
   }

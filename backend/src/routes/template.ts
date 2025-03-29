@@ -552,87 +552,56 @@ export default async function workflowTemplate(app: FastifyInstance) {
           return reply.status(404).send({ error: "Template not found." });
         }
 
+        const template = updateIds(
+          JSON.parse(JSON.stringify(originalTemplate))
+        );
+
         // Generate new name with random suffix
         const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-        const newName = `${originalTemplate.name} - Copy ${randomSuffix}`;
+        const newName = `${template.name} - Copy ${randomSuffix}`;
 
-        // Map of old step IDs to new step IDs for entry point and connections
-        const stepIdMap = new Map();
+        delete template.name;
 
-        // Create the duplicated template
-        const duplicatedTemplate = await app.prisma.workflowTemplate.create({
+        const newTemplate = await app.prisma.workflowTemplate.create({
           data: {
+            id: template.id,
             name: newName,
-            status:
-              originalTemplate.status === "PUBLISHED"
-                ? "DRAFT"
-                : originalTemplate.status,
+            status: "DRAFT",
           },
         });
 
-        // Duplicate steps
-        for (const step of originalTemplate.steps) {
-          const newStepId = crypto.randomUUID();
-          stepIdMap.set(step.id, newStepId);
-          await app.prisma.step.create({
-            data: {
-              id: newStepId,
-              workflowTemplateId: duplicatedTemplate.id,
-              name: step.name,
-              type: step.type,
-              inputs: step.inputs ?? {},
-              visualizationMetadata: step.visualizationMetadata ?? {},
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          });
-        }
+        await app.prisma.step.createMany({
+          data: template.steps.map((step: any) => ({
+            ...step,
+            workflowTemplateId: newTemplate.id, // Ensure correct linkage
+          })),
+        });
 
-        // Duplicate connections
-        for (const connection of originalTemplate.connections) {
-          await app.prisma.connection.create({
-            data: {
-              id: crypto.randomUUID(),
-              workflowTemplateId: duplicatedTemplate.id,
-              fromStepId:
-                stepIdMap.get(connection.fromStepId) ?? connection.fromStepId,
-              toStepId:
-                stepIdMap.get(connection.toStepId) ?? connection.toStepId,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          });
-        }
+        await app.prisma.connection.createMany({
+          data: template.connections.map((connection: any) => ({
+            ...connection,
+            workflowTemplateId: newTemplate.id,
+          })),
+        });
 
-        // Duplicate triggers
-        for (const trigger of originalTemplate.triggers) {
-          await app.prisma.trigger.create({
-            data: {
-              id: `trigger-${crypto.randomUUID()}`,
-              workflowTemplateId: duplicatedTemplate.id,
-              type: trigger.type,
-              inputs: trigger.inputs ?? {},
-              visualizationMetadata: trigger.visualizationMetadata ?? {},
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          });
-        }
+        await app.prisma.trigger.createMany({
+          data: template.triggers.map((trigger: any) => ({
+            ...trigger,
+            workflowTemplateId: newTemplate.id,
+          })),
+        });
 
-        // Update entryPointId in duplicated template
-        if (originalTemplate.entryPointId) {
+        if (template.entryPointId) {
           await app.prisma.workflowTemplate.update({
-            where: { id: duplicatedTemplate.id },
-            data: {
-              entryPointId: stepIdMap.get(originalTemplate.entryPointId),
-            },
+            where: { id: newTemplate.id },
+            data: { entryPointId: template.entryPointId },
           });
         }
 
         return reply.status(200).send({
-          id: duplicatedTemplate.id,
-          name: duplicatedTemplate.name,
-          status: duplicatedTemplate.status,
+          id: newTemplate.id,
+          name: newTemplate.name,
+          status: newTemplate.status,
           message: "Template duplicated successfully.",
         });
       } catch (error) {
