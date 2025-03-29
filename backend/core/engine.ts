@@ -115,10 +115,15 @@ export class WorkflowEngine {
         outputs
       );
     } catch (error) {
+      const errorDetails = error instanceof Error 
+        ? { message: error.message, stack: error.stack }
+        : { message: String(error) };
+        
       await this.repository.updateStepRunStatus(
         stepRun.id,
         StepRunStatus.FAILED,
-        {}
+        {},
+        errorDetails
       );
       await this.repository.changeExecutionStatus(
         this.workflowRun.id,

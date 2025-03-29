@@ -48,13 +48,18 @@ export class WorkflowRunRepository {
   async updateStepRunStatus(
     stepRunId: string,
     status: StepRunStatus,
-    output: StepRun["output"]
+    output: StepRun["output"],
+    error?: { message: string; stack?: string }
   ) {
+    const finalOutput = error 
+      ? { error: { message: error.message, stack: error.stack }}
+      : output;
+
     return this.prisma.stepRun.update({
       where: { id: stepRunId },
       data: {
         status,
-        output: output || {},
+        output: finalOutput || {},
       },
     });
   }

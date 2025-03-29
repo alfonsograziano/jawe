@@ -65,9 +65,13 @@ describe("WorkflowEngine", () => {
       WorkflowStatus.FAILED
     );
 
-    expect(
-      repository.getMockData().stepRuns[createStepRunId(runId, "step1")].status
-    ).toBe(WorkflowStatus.FAILED);
+    const failedStepRun = repository.getMockData().stepRuns[createStepRunId(runId, "step1")];
+    expect(failedStepRun.status).toBe(WorkflowStatus.FAILED);
+    expect(failedStepRun.output).toBeDefined();
+    const output = failedStepRun.output as { error?: { message: string; stack: string } };
+    expect(output.error).toBeDefined();
+    expect(output.error?.message).toBeDefined();
+    expect(output.error?.stack).toBeDefined();
 
     // Step 2 shouldn't be reached as Step 1 failed
     expect(
@@ -295,7 +299,7 @@ describe("WorkflowEngine", () => {
       }),
     });
 
-    // Spy on the repository’s createStepRun so we can later check in which order
+    // Spy on the repository's createStepRun so we can later check in which order
     // steps were started. In the new implementation, dependency management is done
     // internally by decrementing a dependency counter. This spy helps us verify that
     // the convergent step (here "step4") is only started after its two prerequisites

@@ -52,13 +52,19 @@ export class WorkflowRunRepositoryMock {
   async updateStepRunStatus(
     stepRunId: string,
     status: StepRunStatus,
-    output: Record<string, unknown>
+    output: Record<string, unknown>,
+    error?: { message: string; stack?: string }
   ) {
     if (!this.mockData.stepRuns[stepRunId]) {
       throw new Error(`Step run with id ${stepRunId} does not exist`);
     }
     this.mockData.stepRuns[stepRunId].status = status;
-    this.mockData.stepRuns[stepRunId].output = output as JsonValue;
+    
+    const finalOutput = error 
+      ? { ...output, error: { message: error.message, stack: error.stack } }
+      : output;
+      
+    this.mockData.stepRuns[stepRunId].output = finalOutput as JsonValue;
     return this.mockData.stepRuns[stepRunId];
   }
 
