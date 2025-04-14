@@ -12,7 +12,7 @@
     "dev:frontend": "npm run dev --workspace=frontend",
     "dev": "npm run db:migrate --workspace=backend && concurrently \"npm run dev --workspace=frontend\" \"npm run dev --workspace=backend\"",
     "test": "npm run test --workspace=backend",
-    "start": "npm install && docker-compose up -d && sleep 3 && npm run dev"
+    "start": "npm install && docker-compose up -d && node scripts/delay.js 3 && npm run dev"
   },
   "author": "",
   "license": "ISC",
@@ -21,5 +21,8 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.34.7"
   }
 }
